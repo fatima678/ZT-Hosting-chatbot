@@ -3024,10 +3024,17 @@ async def ask_bot(request: Request):
                 context_text += f_path.read_text(encoding="utf-8")[:2000] + "\n"
 
         # Fallback agar koi file match na ho
+        # if not context_text:
+        #     home_file = DATA_DIR / "zt_home_page.txt"
+        #     if home_file.exists():
+        #         context_text = home_file.read_text(encoding="utf-8")[:3000]
+
+        # update code hello or hy greeting ko sahi sy response deny ky lea
+
         if not context_text:
-            home_file = DATA_DIR / "zt_home_page.txt"
-            if home_file.exists():
-                context_text = home_file.read_text(encoding="utf-8")[:3000]
+            # Agar koi file nahi mili, toh hum AI ko khula chhor denge
+            # Ya phir sirf basic intro denge taake wo khud se baat kare
+            context_text = "ZT Hosting is a professional web hosting provider. If you don't have specific data for a query, answer politely or ask for more details."
 
         # --- STEP 2: AI PROCESSING ---
         llm = get_llm()
@@ -3050,15 +3057,83 @@ async def ask_bot(request: Request):
 # )
 
 # handle hi hello greetings 
+#         system_prompt = (
+#             "You are a Senior ZT Hosting Support Executive. Your goal is to provide elite, professional, and lightning-fast support. "
+#     "STRICT PROTOCOLS: "
+#     "1. RESPONSE LIMIT: Maximum 60-80 words total. Efficiency is key. "
+#     "2. STRUCTURE: Use exactly 3 bullet points for features/services. No more, no less. "
+#     "3. DIRECTNESS: No 'Hello' or 'How can I help'. Start with the specific answer immediately. "
+#     "4. VISUAL HIERARCHY: Use **bold** for prices, plan names, or percentages (e.g., **99.9% Uptime**). "
+#     "5. TONE: Professional, executive, and helpful. Avoid fluff like 'We offer a wide range of...'. "
+# )
+#         prompt = ChatPromptTemplate.from_messages([
+#             ("system", system_prompt),
+#             ("user", f"Context: {context_text}\n\nQuestion: {user_input}")
+#         ])
+
+#         chain = prompt | llm
+#         response = chain.invoke({"input": user_input})
+        
+#         return {"answer": response.content}
+
+#     except Exception as e:
+#         return {"answer": f"I'm sorry, I'm having trouble retrieving that. (Error: {str(e)})"}
+
+# update to to hello hy ka sahi response deny ky lea
+
+@app.post("/ask")
+async def ask_bot(request: Request):
+    try:
+        data = await request.json()
+        user_input = data.get("message", "").strip()
+        user_query_lower = user_input.lower()
+
+        # --- SMART GREETING CHECK ---
+        greetings_map = {
+            "hi": "Hello! How can I assist you with ZT Hosting today?",
+            "hello": "Hi there! Looking for hosting or need support? I'm here to help.",
+            "hey": "Hey! How's it going? How can ZT Hosting support your project today?",
+            "hy": "Hey! How's it going? How can ZT Hosting support your project today?",
+            "aoa": "Walaikum Assalam! How can I help you with our services today?",
+            "asalam": "Walaikum Assalam! Welcome to ZT Hosting. How can I assist you?"
+        }
+
+        # Agar greeting hai toh yahan se foran jawab bhej do
+        if user_query_lower in greetings_map:
+            return {"answer": greetings_map[user_query_lower]}
+
+        # --- STEP 1: DYNAMIC FILE SCANNER ---
+        context_text = ""
+        matched_files = []
+        user_words = set(user_query_lower.split())
+
+        if DATA_DIR.exists():
+            all_files = [f for f in os.listdir(DATA_DIR) if f.endswith(".txt")]
+            for file in all_files:
+                file_keywords = set(file.lower().replace("_", " ").replace(".txt", "").split())
+                if user_words.intersection(file_keywords):
+                    matched_files.append(file)
+
+            for f_name in matched_files[:3]:
+                f_path = DATA_DIR / f_name
+                context_text += f_path.read_text(encoding="utf-8")[:2000] + "\n"
+
+        # --- SMART FALLBACK (Lakair ka fakir nahi banna) ---
+        if not context_text:
+            # Sirf AI ko hint dena hai, pura data nahi phenkna
+            context_text = "The user is asking a general question. Be polite. If you don't have the answer in your knowledge base, say you don't have specific details."
+
+        # --- STEP 2: AI PROCESSING ---
+        llm = get_llm()
         system_prompt = (
-            "You are a Senior ZT Hosting Support Executive. Your goal is to provide elite, professional, and lightning-fast support. "
-    "STRICT PROTOCOLS: "
-    "1. RESPONSE LIMIT: Maximum 60-80 words total. Efficiency is key. "
-    "2. STRUCTURE: Use exactly 3 bullet points for features/services. No more, no less. "
-    "3. DIRECTNESS: No 'Hello' or 'How can I help'. Start with the specific answer immediately. "
-    "4. VISUAL HIERARCHY: Use **bold** for prices, plan names, or percentages (e.g., **99.9% Uptime**). "
-    "5. TONE: Professional, executive, and helpful. Avoid fluff like 'We offer a wide range of...'. "
-)
+            "You are a Senior ZT Hosting Support Executive. "
+            "STRICT PROTOCOLS: "
+            "1. If context is general, do not dump pricing tables unless asked for 'plans'. "
+            "2. If you don't know the answer, say: 'I'm sorry, I don't have specific details on that right now. Could you please clarify?' "
+            "3. RESPONSE LIMIT: Max 60 words. "
+            "4. Start the answer directly without 'Hello'."
+        )
+
         prompt = ChatPromptTemplate.from_messages([
             ("system", system_prompt),
             ("user", f"Context: {context_text}\n\nQuestion: {user_input}")
@@ -3070,7 +3145,10 @@ async def ask_bot(request: Request):
         return {"answer": response.content}
 
     except Exception as e:
+        # Error handling for Pylance issue
         return {"answer": f"I'm sorry, I'm having trouble retrieving that. (Error: {str(e)})"}
+
+
 
 
 # --- Routes for UI (Baqi routes same rahenge) ---
