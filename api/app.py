@@ -2994,11 +2994,12 @@ async def ask_bot(request: Request):
         # <--- YAHAN PASTE KAREIN --->
         # --- START GREETINGS LOGIC ---
         # --- TECHNICAL GREETING BYPASS (Yahan rakhein taake scanner se pehle check ho) ---
-        clean_input = "".join(filter(str.isalpha, user_query_lower)) 
-        greeting_starts = ("hi", "helo", "hy", "hey", "aoa", "salam")
-        
-        if clean_input.startswith(greeting_starts) and len(clean_input) < 10:
-            return {"answer": "Hello! Welcome to ZT Hosting. How can I assist you today?"}
+        # --- YAHAN PASTE KAREIN (Sab se upar) ---
+        import re
+        # Ye line hiii, hyyy, hellooo, sab ko pakad legi
+        if re.search(r'^(h+[iy]+|h+e+l+o+|a+o+a+|s+a+l+a+m+)', user_query_lower):
+            return {"answer": "Hello! Welcome to ZT Hosting. How can I assist you with our services today?"}
+        # -------------------
 
         # --- STEP 1: DYNAMIC FILE SCANNER (100+ Files) ---
         context_text = ""
