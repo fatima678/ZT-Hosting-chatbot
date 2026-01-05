@@ -187,7 +187,9 @@ def scrape_zt_hosting():
 
     # Path ko dynamic banaya taake GitHub Actions aur local dono par chale
     current_dir = os.path.dirname(os.path.abspath(__file__))
-    data_folder = os.path.join(current_dir, '..', 'data', 'scraped_pages')
+    # data_folder = os.path.join(current_dir, '..', 'data', 'scraped_pages')
+
+    data_folder = os.path.join(current_dir, '..', 'data')
     
     if not os.path.exists(data_folder): 
         os.makedirs(data_folder)
