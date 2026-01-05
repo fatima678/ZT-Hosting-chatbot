@@ -2992,9 +2992,13 @@ async def ask_bot(request: Request):
         user_query_lower = user_input.lower()
 
         # <--- YAHAN PASTE KAREIN --->
-        greetings = ["hi", "hello", "hey", "aoa", "asalam", "salam", "hey there"]
-        if user_query_lower in greetings:
-            return {"answer": "Hello! How can I assist you with ZT Hosting today?"}
+        greetings_map = {
+            "hi": "Hello! How can I assist you with ZT Hosting today?",
+            "hello": "Hi there! Looking for hosting or need support? I'm here to help.",
+            "hey": "Hey! How's it going? How can ZT Hosting support your project today?",
+            "aoa": "Walaikum Assalam! How can I help you with our services today?",
+            "asalam": "Walaikum Assalam! Welcome to ZT Hosting. How can I assist you?"
+        }
 
         # --- STEP 1: DYNAMIC FILE SCANNER (100+ Files) ---
         context_text = ""
