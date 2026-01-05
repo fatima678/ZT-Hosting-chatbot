@@ -405,7 +405,7 @@ Labels Hataye: Bot: aur You: labels ko khatam kar diya gaya hai taake interface 
         </div>
     </div>
 
-    <script>
+    <!-- <script>
         function toggleChat() {
             const win = document.getElementById('chatWindow');
             win.style.display = (win.style.display === 'flex') ? 'none' : 'flex';
@@ -455,6 +455,57 @@ Labels Hataye: Bot: aur You: labels ko khatam kar diya gaya hai taake interface 
                 box.innerHTML += `<div style="color:red; font-size:12px;">Error: Connection lost.</div>`;
             });
         }
-    </script>
+    </script> -->
+
+
+    <script>
+    function toggleChat() {
+        const win = document.getElementById('chatWindow');
+        win.style.display = (win.style.display === 'flex') ? 'none' : 'flex';
+    }
+
+    function handleEnter(event) {
+        if (event.key === "Enter") { sendMsg(); }
+    }
+
+    function sendMsg() {
+        const input = document.getElementById('userInput');
+        const box = document.getElementById('chat-box');
+        const loading = document.getElementById('loading');
+        
+        if(!input.value.trim()) return;
+
+        const userText = input.value;
+        box.innerHTML += `<div class="message user-msg">${userText}</div>`;
+        input.value = '';
+        
+        loading.style.display = 'block';
+        box.scrollTop = box.scrollHeight;
+
+        // Vercel aur Localhost dono ke liye sahi path
+        const apiEndpoint = '/api/chat'; 
+
+        fetch(apiEndpoint, {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({message: userText})
+        })
+        .then(res => res.json())
+        .then(data => {
+            loading.style.display = 'none';
+            
+            // Format response (Marked.js Markdown ko handle karega)
+            // Aapka Node code 'reply' bhej raha hai, isliye data.reply use kiya
+            const formattedAnswer = marked.parse(data.reply || data.answer);
+            
+            box.innerHTML += `<div class="message bot-msg">${formattedAnswer}</div>`;
+            box.scrollTop = box.scrollHeight;
+        })
+        .catch(err => {
+            loading.style.display = 'none';
+            box.innerHTML += `<div style="color:red; font-size:12px; padding:10px;">Error: Could not connect to AI server.</div>`;
+        });
+    }
+</script>
 </body>
 </html>

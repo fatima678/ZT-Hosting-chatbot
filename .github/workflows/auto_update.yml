@@ -1,9 +1,50 @@
+# # name: ZT Hosting Daily Content Sync
+
+# # on:
+# #   schedule:
+# #     - cron: '0 0 * * *'  # Har raat 12:00 AM par chalega
+# #   workflow_dispatch:      # Manual button bhi mil jayega GitHub par
+
+# # jobs:
+# #   auto-sync:
+# #     runs-on: ubuntu-latest
+# #     steps:
+# #       - name: Repo Checkout
+# #         uses: actions/checkout@v3
+
+# #       - name: Setup Python
+# #         uses: actions/setup-python@v4
+# #         with:
+# #           python-version: '3.9'
+
+# #       - name: Dependencies Install
+# #         run: pip install requests beautifulsoup4
+
+# #       - name: Run Scraper
+# #         run: python api/scraper.py
+
+# #       - name: Push Updates
+# #         run: |
+# #           git config --global user.name 'ZT-Auto-Fetcher'
+# #           git config --global user.email 'bot@zthosting.com'
+# #           git add data/*.txt
+# #           git commit -m "Auto-update: Website content refreshed" || exit 0
+# #           git push
+
+
+
+# # ChromaDB/LangChain ki dependencies install karni hongi.
+
+# # ingest.py ko run karna hoga taake files ke saath saath bot ka "brain" (Vector Database) bhi update ho jaye.
+
+
+
 # name: ZT Hosting Daily Content Sync
 
 # on:
 #   schedule:
-#     - cron: '0 0 * * *'  # Har raat 12:00 AM par chalega
-#   workflow_dispatch:      # Manual button bhi mil jayega GitHub par
+#     - cron: '0 0 * * *'  # Har raat 12:00 AM (UTC) par chalega
+#   workflow_dispatch:      # Manual trigger button
 
 # jobs:
 #   auto-sync:
@@ -18,33 +59,38 @@
 #           python-version: '3.9'
 
 #       - name: Dependencies Install
-#         run: pip install requests beautifulsoup4
+#         run: |
+#           pip install requests beautifulsoup4 langchain langchain-chroma langchain-community sentence-transformers
 
 #       - name: Run Scraper
 #         run: python api/scraper.py
+
+#       - name: Run Ingest (Sync Database)
+#         run: python ingest.py  # Yeh sabse important step hai accuracy ke liye
 
 #       - name: Push Updates
 #         run: |
 #           git config --global user.name 'ZT-Auto-Fetcher'
 #           git config --global user.email 'bot@zthosting.com'
-#           git add data/*.txt
-#           git commit -m "Auto-update: Website content refreshed" || exit 0
+#           # Hum data files aur updated database dono push karenge
+#           git add data/*.txt db/* git commit -m "Auto-update: Website content and Vector DB refreshed $(date)" || exit 0
 #           git push
 
 
+# Sir ki automation requirements ko pura karne ke liye, aapko apni GitHub Workflow file (.github/workflows/auto_sync.yml) ko mazeed robust banana hoga taake database aur data files sahi tarah sync hon.
 
-# ChromaDB/LangChain ki dependencies install karni hongi.
-
-# ingest.py ko run karna hoga taake files ke saath saath bot ka "brain" (Vector Database) bhi update ho jaye.
-
+# Niche aapki auto-sync file ka complete aur corrected code hai:
 
 
 name: ZT Hosting Daily Content Sync
 
 on:
   schedule:
-    - cron: '0 0 * * *'  # Har raat 12:00 AM (UTC) par chalega
-  workflow_dispatch:      # Manual trigger button
+    - cron: '0 0 * * *'  # Runs every night at 12:00 AM UTC
+  workflow_dispatch:      # Manual trigger button for testing
+
+permissions:
+  contents: write         # Allows GitHub to push changes back to your repo
 
 jobs:
   auto-sync:
@@ -58,20 +104,34 @@ jobs:
         with:
           python-version: '3.9'
 
+      - name: Cache Dependencies
+        uses: actions/cache@v3
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+
       - name: Dependencies Install
         run: |
           pip install requests beautifulsoup4 langchain langchain-chroma langchain-community sentence-transformers
 
       - name: Run Scraper
+        # Scraper fetches live data and checks for changes
         run: python api/scraper.py
 
       - name: Run Ingest (Sync Database)
-        run: python ingest.py  # Yeh sabse important step hai accuracy ke liye
+        # Cleans data and updates Vector DB for 'disciplined' responses
+        run: python ingest.py
 
       - name: Push Updates
         run: |
           git config --global user.name 'ZT-Auto-Fetcher'
           git config --global user.email 'bot@zthosting.com'
-          # Hum data files aur updated database dono push karenge
-          git add data/*.txt db/* git commit -m "Auto-update: Website content and Vector DB refreshed $(date)" || exit 0
-          git push
+          
+          # Adding data and database files
+          git add data/*.txt db/* 2>/dev/null || echo "No changes to add"
+          
+          # Commit only if there are changes to avoid workflow failure
+          git commit -m "Auto-update: Website content and Vector DB refreshed $(date)" || exit 0
+          
+          # Push to the main branch
+          git push origin main
