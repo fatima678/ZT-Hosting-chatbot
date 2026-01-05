@@ -204,7 +204,7 @@ from langchain_community.vectorstores import Chroma # Example
 from langchain_openai import OpenAIEmbeddings # Ya jo aap use kar rahe hain
 
 def clean_and_sync_vector_db():
-    data_dir = 'data/scraped_pages' # Scraper ka output folder
+    data_dir = 'data/' # Scraper ka output folder
     # ... (Aapka cleaning logic yahan rahega) ...
 
     # NEW: Syncing with Vector Database
