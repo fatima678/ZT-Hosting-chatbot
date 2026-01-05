@@ -2982,62 +2982,62 @@ async def debug_paths():
 #             return {"answer": "The request is too large or system is busy. Please try asking a shorter question."}
 #         return {"answer": f"System Error: {str(e)}"}
 
-# DATA_DIR = BASE_DIR / "data"
+DATA_DIR = BASE_DIR / "data"
 
-# @app.post("/ask")
-# async def ask_bot(request: Request):
-#     try:
-#         data = await request.json()
-#         user_input = data.get("message", "").strip()
-#         user_query_lower = user_input.lower()
+@app.post("/ask")
+async def ask_bot(request: Request):
+    try:
+        data = await request.json()
+        user_input = data.get("message", "").strip()
+        user_query_lower = user_input.lower()
 
-#         # <--- YAHAN PASTE KAREIN --->
-#         greetings_map = {
-#             "hi": "Hello! How can I assist you with ZT Hosting today?",
-#             "hello": "Hi there! Looking for hosting or need support? I'm here to help.",
-#             "hey": "Hey! How's it going? How can ZT Hosting support your project today?",
-#             "hy": "Hey! How's it going? How can ZT Hosting support your project today?",
+        # <--- YAHAN PASTE KAREIN --->
+        greetings_map = {
+            "hi": "Hello! How can I assist you with ZT Hosting today?",
+            "hello": "Hi there! Looking for hosting or need support? I'm here to help.",
+            "hey": "Hey! How's it going? How can ZT Hosting support your project today?",
+            "hy": "Hey! How's it going? How can ZT Hosting support your project today?",
 
-#             "aoa": "Walaikum Assalam! How can I help you with our services today?",
-#             "asalam": "Walaikum Assalam! Welcome to ZT Hosting. How can I assist you?"
-#         }
+            "aoa": "Walaikum Assalam! How can I help you with our services today?",
+            "asalam": "Walaikum Assalam! Welcome to ZT Hosting. How can I assist you?"
+        }
 
-#         # --- STEP 1: DYNAMIC FILE SCANNER (100+ Files) ---
-#         context_text = ""
-#         matched_files = []
-#         user_words = set(user_query_lower.split())
+        # --- STEP 1: DYNAMIC FILE SCANNER (100+ Files) ---
+        context_text = ""
+        matched_files = []
+        user_words = set(user_query_lower.split())
 
-#         if DATA_DIR.exists():
-#             all_files = [f for f in os.listdir(DATA_DIR) if f.endswith(".txt")]
+        if DATA_DIR.exists():
+            all_files = [f for f in os.listdir(DATA_DIR) if f.endswith(".txt")]
             
-#             for file in all_files:
-#                 # File name ko keywords mein badlein (e.g. 'vps_hosting.txt' -> {'vps', 'hosting'})
-#                 file_keywords = set(file.lower().replace("_", " ").replace(".txt", "").split())
+            for file in all_files:
+                # File name ko keywords mein badlein (e.g. 'vps_hosting.txt' -> {'vps', 'hosting'})
+                file_keywords = set(file.lower().replace("_", " ").replace(".txt", "").split())
                 
-#                 # Agar koi keyword match ho jaye
-#                 if user_words.intersection(file_keywords):
-#                     matched_files.append(file)
+                # Agar koi keyword match ho jaye
+                if user_words.intersection(file_keywords):
+                    matched_files.append(file)
 
-#             # Relevant files parhein (Limit 3 files to avoid memory crash)
-#             for f_name in matched_files[:3]:
-#                 f_path = DATA_DIR / f_name
-#                 context_text += f_path.read_text(encoding="utf-8")[:2000] + "\n"
+            # Relevant files parhein (Limit 3 files to avoid memory crash)
+            for f_name in matched_files[:3]:
+                f_path = DATA_DIR / f_name
+                context_text += f_path.read_text(encoding="utf-8")[:2000] + "\n"
 
-#         # Fallback agar koi file match na ho
-#         # if not context_text:
-#         #     home_file = DATA_DIR / "zt_home_page.txt"
-#         #     if home_file.exists():
-#         #         context_text = home_file.read_text(encoding="utf-8")[:3000]
+        # Fallback agar koi file match na ho
+        # if not context_text:
+        #     home_file = DATA_DIR / "zt_home_page.txt"
+        #     if home_file.exists():
+        #         context_text = home_file.read_text(encoding="utf-8")[:3000]
 
-#         # update code hello or hy greeting ko sahi sy response deny ky lea
+        # update code hello or hy greeting ko sahi sy response deny ky lea
 
-#         if not context_text:
-#             # Agar koi file nahi mili, toh hum AI ko khula chhor denge
-#             # Ya phir sirf basic intro denge taake wo khud se baat kare
-#             context_text = "ZT Hosting is a professional web hosting provider. If you don't have specific data for a query, answer politely or ask for more details."
+        if not context_text:
+            # Agar koi file nahi mili, toh hum AI ko khula chhor denge
+            # Ya phir sirf basic intro denge taake wo khud se baat kare
+            context_text = "ZT Hosting is a professional web hosting provider. If you don't have specific data for a query, answer politely or ask for more details."
 
-#         # --- STEP 2: AI PROCESSING ---
-#         llm = get_llm()
+        # --- STEP 2: AI PROCESSING ---
+        llm = get_llm()
         # system_prompt = (
         #     "You are a Senior ZT Hosting Support Executive. "
         #     "STRICT RULES: Use **Bold** for emphasis. Use Bullet Points for lists. "
@@ -3057,82 +3057,15 @@ async def debug_paths():
 # )
 
 # handle hi hello greetings 
-#         system_prompt = (
-#             "You are a Senior ZT Hosting Support Executive. Your goal is to provide elite, professional, and lightning-fast support. "
-#     "STRICT PROTOCOLS: "
-#     "1. RESPONSE LIMIT: Maximum 60-80 words total. Efficiency is key. "
-#     "2. STRUCTURE: Use exactly 3 bullet points for features/services. No more, no less. "
-#     "3. DIRECTNESS: No 'Hello' or 'How can I help'. Start with the specific answer immediately. "
-#     "4. VISUAL HIERARCHY: Use **bold** for prices, plan names, or percentages (e.g., **99.9% Uptime**). "
-#     "5. TONE: Professional, executive, and helpful. Avoid fluff like 'We offer a wide range of...'. "
-# )
-#         prompt = ChatPromptTemplate.from_messages([
-#             ("system", system_prompt),
-#             ("user", f"Context: {context_text}\n\nQuestion: {user_input}")
-#         ])
-
-#         chain = prompt | llm
-#         response = chain.invoke({"input": user_input})
-        
-#         return {"answer": response.content}
-
-#     except Exception as e:
-#         return {"answer": f"I'm sorry, I'm having trouble retrieving that. (Error: {str(e)})"}
-
-# update to to hello hy ka sahi response deny ky lea
-
-
-@app.post("/ask")
-async def ask_bot(request: Request):
-    # DATA_DIR ko yahan define kar dein taake Pylance error khatam ho jaye
-    BASE_DIR = Path(__file__).resolve().parent.parent
-    DATA_DIR = BASE_DIR / "data"
-    
-    try:
-        data = await request.json()
-        user_input = data.get("message", "").strip()
-        user_query_lower = user_input.lower()
-
-        # --- SMART GREETING CHECK ---
-        greetings_map = {
-            "hi": "Hello! How can I assist you with ZT Hosting today?",
-            "hello": "Hi there! Looking for hosting or need support?",
-            "hey": "Hey! How can ZT Hosting support your project today?",
-            "hy": "Hey! How's it going?",
-            "aoa": "Walaikum Assalam! How can I help you today?",
-            "asalam": "Walaikum Assalam! Welcome to ZT Hosting."
-        }
-
-        if user_query_lower in greetings_map:
-            return {"answer": greetings_map[user_query_lower]}
-
-        # --- STEP 1: DYNAMIC FILE SCANNER ---
-        context_text = ""
-        matched_files = []
-        user_words = set(user_query_lower.split())
-
-        if DATA_DIR.exists():
-            all_files = [f for f in os.listdir(DATA_DIR) if f.endswith(".txt")]
-            for file in all_files:
-                file_keywords = set(file.lower().replace("_", " ").replace(".txt", "").split())
-                if user_words.intersection(file_keywords):
-                    matched_files.append(file)
-
-            for f_name in matched_files[:3]:
-                f_path = DATA_DIR / f_name
-                context_text += f_path.read_text(encoding="utf-8")[:2000] + "\n"
-
-        # --- SMART FALLBACK ---
-        if not context_text:
-            context_text = "The user is asking a general question. Answer politely and ask for details."
-
-        # --- STEP 2: AI PROCESSING ---
-        llm = get_llm()
         system_prompt = (
-            "You are a Senior ZT Hosting Support Executive. "
-            "If context is missing, politely ask for more details. Limit to 60 words."
-        )
-
+            "You are a Senior ZT Hosting Support Executive. Your goal is to provide elite, professional, and lightning-fast support. "
+    "STRICT PROTOCOLS: "
+    "1. RESPONSE LIMIT: Maximum 60-80 words total. Efficiency is key. "
+    "2. STRUCTURE: Use exactly 3 bullet points for features/services. No more, no less. "
+    "3. DIRECTNESS: No 'Hello' or 'How can I help'. Start with the specific answer immediately. "
+    "4. VISUAL HIERARCHY: Use **bold** for prices, plan names, or percentages (e.g., **99.9% Uptime**). "
+    "5. TONE: Professional, executive, and helpful. Avoid fluff like 'We offer a wide range of...'. "
+)
         prompt = ChatPromptTemplate.from_messages([
             ("system", system_prompt),
             ("user", f"Context: {context_text}\n\nQuestion: {user_input}")
@@ -3144,77 +3077,7 @@ async def ask_bot(request: Request):
         return {"answer": response.content}
 
     except Exception as e:
-        # Ye block syntax error khatam kar dega
-        return {"answer": f"I'm sorry, I'm having trouble. (Error: {str(e)})"}
-
-@app.post("/ask")
-async def ask_bot(request: Request):
-    try:
-        data = await request.json()
-        user_input = data.get("message", "").strip()
-        user_query_lower = user_input.lower()
-
-        # --- SMART GREETING CHECK ---
-        greetings_map = {
-            "hi": "Hello! How can I assist you with ZT Hosting today?",
-            "hello": "Hi there! Looking for hosting or need support? I'm here to help.",
-            "hey": "Hey! How's it going? How can ZT Hosting support your project today?",
-            "hy": "Hey! How's it going? How can ZT Hosting support your project today?",
-            "aoa": "Walaikum Assalam! How can I help you with our services today?",
-            "asalam": "Walaikum Assalam! Welcome to ZT Hosting. How can I assist you?"
-        }
-
-        # Agar greeting hai toh yahan se foran jawab bhej do
-        if user_query_lower in greetings_map:
-            return {"answer": greetings_map[user_query_lower]}
-
-        # --- STEP 1: DYNAMIC FILE SCANNER ---
-        context_text = ""
-        matched_files = []
-        user_words = set(user_query_lower.split())
-
-        if DATA_DIR.exists():
-            all_files = [f for f in os.listdir(DATA_DIR) if f.endswith(".txt")]
-            for file in all_files:
-                file_keywords = set(file.lower().replace("_", " ").replace(".txt", "").split())
-                if user_words.intersection(file_keywords):
-                    matched_files.append(file)
-
-            for f_name in matched_files[:3]:
-                f_path = DATA_DIR / f_name
-                context_text += f_path.read_text(encoding="utf-8")[:2000] + "\n"
-
-        # --- SMART FALLBACK (Lakair ka fakir nahi banna) ---
-        if not context_text:
-            # Sirf AI ko hint dena hai, pura data nahi phenkna
-            context_text = "The user is asking a general question. Be polite. If you don't have the answer in your knowledge base, say you don't have specific details."
-
-        # --- STEP 2: AI PROCESSING ---
-        llm = get_llm()
-        system_prompt = (
-            "You are a Senior ZT Hosting Support Executive. "
-            "STRICT PROTOCOLS: "
-            "1. If context is general, do not dump pricing tables unless asked for 'plans'. "
-            "2. If you don't know the answer, say: 'I'm sorry, I don't have specific details on that right now. Could you please clarify?' "
-            "3. RESPONSE LIMIT: Max 60 words. "
-            "4. Start the answer directly without 'Hello'."
-        )
-
-        prompt = ChatPromptTemplate.from_messages([
-            ("system", system_prompt),
-            ("user", f"Context: {context_text}\n\nQuestion: {user_input}")
-        ])
-
-        chain = prompt | llm
-        response = chain.invoke({"input": user_input})
-        
-        return {"answer": response.content}
-
-    except Exception as e:
-        # Error handling for Pylance issue
         return {"answer": f"I'm sorry, I'm having trouble retrieving that. (Error: {str(e)})"}
-
-
 
 
 # --- Routes for UI (Baqi routes same rahenge) ---
