@@ -2982,6 +2982,106 @@ async def debug_paths():
 #             return {"answer": "The request is too large or system is busy. Please try asking a shorter question."}
 #         return {"answer": f"System Error: {str(e)}"}
 
+# DATA_DIR = BASE_DIR / "data"
+
+# @app.post("/ask")
+# async def ask_bot(request: Request):
+#     try:
+#         data = await request.json()
+#         user_input = data.get("message", "").strip()
+#         user_query_lower = user_input.lower()
+
+#         # <--- YAHAN PASTE KAREIN --->
+#         # --- START GREETINGS LOGIC ---
+#         # --- TECHNICAL GREETING BYPASS (Yahan rakhein taake scanner se pehle check ho) ---
+#         # --- YAHAN PASTE KAREIN (Sab se upar) ---
+#         import re
+#         # Ye line hiii, hyyy, hellooo, sab ko pakad legi
+#         if re.search(r'^(h+[iy]+|h+e+l+o+|a+o+a+|s+a+l+a+m+)', user_query_lower):
+#             return {"answer": "Hello! Welcome to ZT Hosting. How can I assist you with our services today?"}
+#         # -------------------
+
+#         # --- STEP 1: DYNAMIC FILE SCANNER (100+ Files) ---
+#         context_text = ""
+#         matched_files = []
+#         user_words = set(user_query_lower.split())
+
+#         if DATA_DIR.exists():
+#             all_files = [f for f in os.listdir(DATA_DIR) if f.endswith(".txt")]
+            
+#             for file in all_files:
+#                 # File name ko keywords mein badlein (e.g. 'vps_hosting.txt' -> {'vps', 'hosting'})
+#                 file_keywords = set(file.lower().replace("_", " ").replace(".txt", "").split())
+                
+#                 # Agar koi keyword match ho jaye
+#                 if user_words.intersection(file_keywords):
+#                     matched_files.append(file)
+
+#             # Relevant files parhein (Limit 3 files to avoid memory crash)
+#             for f_name in matched_files[:3]:
+#                 f_path = DATA_DIR / f_name
+#                 context_text += f_path.read_text(encoding="utf-8")[:2000] + "\n"
+
+#         # Fallback agar koi file match na ho
+#         # if not context_text:
+#         #     home_file = DATA_DIR / "zt_home_page.txt"
+#         #     if home_file.exists():
+#         #         context_text = home_file.read_text(encoding="utf-8")[:3000]
+
+#         # update code hello or hy greeting ko sahi sy response deny ky lea
+
+#         if not context_text:
+#             # Agar koi file nahi mili, toh hum AI ko khula chhor denge
+#             # Ya phir sirf basic intro denge taake wo khud se baat kare
+#             context_text = "ZT Hosting is a professional web hosting provider. If you don't have specific data for a query, answer politely or ask for more details."
+
+#         # --- STEP 2: AI PROCESSING ---
+#         llm = get_llm()
+#         # system_prompt = (
+#         #     "You are a Senior ZT Hosting Support Executive. "
+#         #     "STRICT RULES: Use **Bold** for emphasis. Use Bullet Points for lists. "
+#         #     "Keep answers structured and professional. If you find a price offer like $1, mention it clearly."
+#         #     "Be concise and use only 3-4 bullet points for features unless the user asks for more details."
+#         # )
+        
+
+# #         system_prompt = (
+# #     "You are a Senior ZT Hosting Support Executive. "
+# #     "STRICT RULES for conciseness: "
+# #     "1. Keep the total response under 100-150 words. "
+# #     "2. Use a MAXIMUM of 3-4 bullet points per answer. "
+# #     "3. Avoid long introductions; start directly with the answer. "
+# #     "4. Highlight the most important detail (like price) in **bold**. "
+# #     "5. Do not repeat information if it's already mentioned."
+# # )
+
+# # handle hi hello greetings 
+#         system_prompt = (
+#             "You are a Senior ZT Hosting Support Executive. Your goal is to provide elite, professional, and lightning-fast support. "
+#     "STRICT PROTOCOLS: "
+#     "1. RESPONSE LIMIT: Maximum 60-80 words total. Efficiency is key. "
+#     "2. STRUCTURE: Use exactly 3 bullet points for features/services. No more, no less. "
+#     "3. DIRECTNESS: No 'Hello' or 'How can I help'. Start with the specific answer immediately. "
+#     "4. VISUAL HIERARCHY: Use **bold** for prices, plan names, or percentages (e.g., **99.9% Uptime**). "
+#     "5. TONE: Professional, executive, and helpful. Avoid fluff like 'We offer a wide range of...'. "
+# )
+#         prompt = ChatPromptTemplate.from_messages([
+#             ("system", system_prompt),
+#             ("user", f"Context: {context_text}\n\nQuestion: {user_input}")
+#         ])
+
+#         chain = prompt | llm
+#         response = chain.invoke({"input": user_input})
+        
+#         return {"answer": response.content}
+
+#     except Exception as e:
+#         return {"answer": f"I'm sorry, I'm having trouble retrieving that. (Error: {str(e)})"}
+
+
+# update the code greeting ko sahi sy handle krny ky lea 
+
+
 DATA_DIR = BASE_DIR / "data"
 
 @app.post("/ask")
@@ -2991,80 +3091,43 @@ async def ask_bot(request: Request):
         user_input = data.get("message", "").strip()
         user_query_lower = user_input.lower()
 
-        # <--- YAHAN PASTE KAREIN --->
-        # --- START GREETINGS LOGIC ---
-        # --- TECHNICAL GREETING BYPASS (Yahan rakhein taake scanner se pehle check ho) ---
-        # --- YAHAN PASTE KAREIN (Sab se upar) ---
+        # --- GREETINGS REGEX (SAB SE UPAR) ---
         import re
-        # Ye line hiii, hyyy, hellooo, sab ko pakad legi
+        # Ye hiii, hyyy, hellooo, aoa sab ko scanner se pehle pakad lega
         if re.search(r'^(h+[iy]+|h+e+l+o+|a+o+a+|s+a+l+a+m+)', user_query_lower):
             return {"answer": "Hello! Welcome to ZT Hosting. How can I assist you with our services today?"}
-        # -------------------
 
-        # --- STEP 1: DYNAMIC FILE SCANNER (100+ Files) ---
+        # --- STEP 1: DYNAMIC FILE SCANNER ---
         context_text = ""
         matched_files = []
         user_words = set(user_query_lower.split())
 
         if DATA_DIR.exists():
             all_files = [f for f in os.listdir(DATA_DIR) if f.endswith(".txt")]
-            
             for file in all_files:
-                # File name ko keywords mein badlein (e.g. 'vps_hosting.txt' -> {'vps', 'hosting'})
                 file_keywords = set(file.lower().replace("_", " ").replace(".txt", "").split())
-                
-                # Agar koi keyword match ho jaye
                 if user_words.intersection(file_keywords):
                     matched_files.append(file)
 
-            # Relevant files parhein (Limit 3 files to avoid memory crash)
             for f_name in matched_files[:3]:
                 f_path = DATA_DIR / f_name
                 context_text += f_path.read_text(encoding="utf-8")[:2000] + "\n"
 
-        # Fallback agar koi file match na ho
-        # if not context_text:
-        #     home_file = DATA_DIR / "zt_home_page.txt"
-        #     if home_file.exists():
-        #         context_text = home_file.read_text(encoding="utf-8")[:3000]
-
-        # update code hello or hy greeting ko sahi sy response deny ky lea
-
+        # --- FALLBACK AGAR FILE NA MILAY ---
         if not context_text:
-            # Agar koi file nahi mili, toh hum AI ko khula chhor denge
-            # Ya phir sirf basic intro denge taake wo khud se baat kare
-            context_text = "ZT Hosting is a professional web hosting provider. If you don't have specific data for a query, answer politely or ask for more details."
+            context_text = "ZT Hosting provider. Answer briefly or ask for details."
 
-        # --- STEP 2: AI PROCESSING ---
+        # --- STEP 2: AI PROCESSING (STRICT PROTOCOLS) ---
         llm = get_llm()
-        # system_prompt = (
-        #     "You are a Senior ZT Hosting Support Executive. "
-        #     "STRICT RULES: Use **Bold** for emphasis. Use Bullet Points for lists. "
-        #     "Keep answers structured and professional. If you find a price offer like $1, mention it clearly."
-        #     "Be concise and use only 3-4 bullet points for features unless the user asks for more details."
-        # )
-        
-
-#         system_prompt = (
-#     "You are a Senior ZT Hosting Support Executive. "
-#     "STRICT RULES for conciseness: "
-#     "1. Keep the total response under 100-150 words. "
-#     "2. Use a MAXIMUM of 3-4 bullet points per answer. "
-#     "3. Avoid long introductions; start directly with the answer. "
-#     "4. Highlight the most important detail (like price) in **bold**. "
-#     "5. Do not repeat information if it's already mentioned."
-# )
-
-# handle hi hello greetings 
         system_prompt = (
-            "You are a Senior ZT Hosting Support Executive. Your goal is to provide elite, professional, and lightning-fast support. "
-    "STRICT PROTOCOLS: "
-    "1. RESPONSE LIMIT: Maximum 60-80 words total. Efficiency is key. "
-    "2. STRUCTURE: Use exactly 3 bullet points for features/services. No more, no less. "
-    "3. DIRECTNESS: No 'Hello' or 'How can I help'. Start with the specific answer immediately. "
-    "4. VISUAL HIERARCHY: Use **bold** for prices, plan names, or percentages (e.g., **99.9% Uptime**). "
-    "5. TONE: Professional, executive, and helpful. Avoid fluff like 'We offer a wide range of...'. "
-)
+            "You are a Senior ZT Hosting Support Executive. "
+            "STRICT PROTOCOLS: "
+            "1. RESPONSE LIMIT: Max 60-80 words. "
+            "2. STRUCTURE: Use exactly 3 bullet points for services. "
+            "3. DIRECTNESS: Start answer immediately. No 'Hello'. "
+            "4. VISUAL HIERARCHY: Use **bold** for prices and plans."
+        )
+
         prompt = ChatPromptTemplate.from_messages([
             ("system", system_prompt),
             ("user", f"Context: {context_text}\n\nQuestion: {user_input}")
@@ -3076,8 +3139,7 @@ async def ask_bot(request: Request):
         return {"answer": response.content}
 
     except Exception as e:
-        return {"answer": f"I'm sorry, I'm having trouble retrieving that. (Error: {str(e)})"}
-
+        return {"answer": f"I'm sorry, I'm having trouble. (Error: {str(e)})"}
 
 # --- Routes for UI (Baqi routes same rahenge) ---
 @app.get("/", response_class=HTMLResponse)
