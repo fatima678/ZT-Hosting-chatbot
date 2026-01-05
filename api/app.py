@@ -3146,18 +3146,29 @@ async def ask_bot(request: Request):
                             break 
                 else:
                     # Agar keyword nahi mila toh shuruat ka hi sahi
-                    context_text += full_content[:2000] + "\n"
+                    context_text += full_content[:5000] + "\n"
 
         # --- STEP 2: AI PROCESSING (STRICT PROTOCOLS) ---
         llm = get_llm()
+        # system_prompt = (
+        #     "You are a Senior ZT Hosting Support Executive. "
+        #     "STRICT PROTOCOLS: "
+        #     "1. RESPONSE LIMIT: Max 60-80 words. "
+        #     "2. STRUCTURE: Use exactly 3 bullet points for services. "
+        #     "3. DIRECTNESS: Start answer immediately. No 'Hello'. "
+        #     "4. VISUAL HIERARCHY: Use **bold** for prices and plans."
+        # )
+
         system_prompt = (
-            "You are a Senior ZT Hosting Support Executive. "
-            "STRICT PROTOCOLS: "
-            "1. RESPONSE LIMIT: Max 60-80 words. "
-            "2. STRUCTURE: Use exactly 3 bullet points for services. "
-            "3. DIRECTNESS: Start answer immediately. No 'Hello'. "
-            "4. VISUAL HIERARCHY: Use **bold** for prices and plans."
-        )
+    "You are a Senior ZT Hosting Support Executive. "
+    "STRICT PROTOCOLS: "
+    "1. DYNAMIC RESPONSE: If the user asks a simple question, be brief (60-80 words). "
+    "   If the user asks for 'details', 'steps', 'why', or 'how', provide a comprehensive "
+    "   and detailed guide (up to 250 words) based on the provided context. "
+    "2. STRUCTURE: Always use exactly 3 bullet points for core features/steps. "
+    "3. NO FLUFF: Start the answer immediately. No 'Hello' or 'Sure'. "
+    "4. VISUALS: Use **bold** for technical terms, prices, and plan names."
+)
 
         prompt = ChatPromptTemplate.from_messages([
             ("system", system_prompt),
