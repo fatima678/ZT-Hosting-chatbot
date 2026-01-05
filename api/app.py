@@ -2992,16 +2992,21 @@ async def ask_bot(request: Request):
         user_query_lower = user_input.lower()
 
         # <--- YAHAN PASTE KAREIN --->
+        # --- START GREETINGS LOGIC ---
         greetings_map = {
             "hi": "Hello! How can I assist you with ZT Hosting today?",
             "hello": "Hi there! Looking for hosting or need support? I'm here to help.",
             "hey": "Hey! How's it going? How can ZT Hosting support your project today?",
             "hy": "Hey! How's it going? How can ZT Hosting support your project today?",
-
             "aoa": "Walaikum Assalam! How can I help you with our services today?",
             "asalam": "Walaikum Assalam! Welcome to ZT Hosting. How can I assist you?"
         }
 
+        # Agar input greeting hai, toh yahi se response bhej do (Baqi code skip ho jayega)
+        if user_query_lower in greetings_map:
+            return {"answer": greetings_map[user_query_lower]}
+        # --- END GREETINGS LOGIC ---
+        
         # --- STEP 1: DYNAMIC FILE SCANNER (100+ Files) ---
         context_text = ""
         matched_files = []
