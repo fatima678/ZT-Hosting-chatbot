@@ -3097,25 +3097,56 @@ async def ask_bot(request: Request):
         if re.search(r'^(h+[iy]+|h+e+l+o+|a+o+a+|s+a+l+a+m+)', user_query_lower):
             return {"answer": "Hello! Welcome to ZT Hosting. How can I assist you with our services today?"}
 
-        # --- STEP 1: DYNAMIC FILE SCANNER ---
+        # # --- STEP 1: DYNAMIC FILE SCANNER ---
+        # context_text = ""
+        # matched_files = []
+        # user_words = set(user_query_lower.split())
+
+        # if DATA_DIR.exists():
+        #     all_files = [f for f in os.listdir(DATA_DIR) if f.endswith(".txt")]
+        #     for file in all_files:
+        #         file_keywords = set(file.lower().replace("_", " ").replace(".txt", "").split())
+        #         if user_words.intersection(file_keywords):
+        #             matched_files.append(file)
+
+        #     for f_name in matched_files[:3]:
+        #         f_path = DATA_DIR / f_name
+        #         context_text += f_path.read_text(encoding="utf-8")[:2000] + "\n"
+
+        # # --- FALLBACK AGAR FILE NA MILAY ---
+        # if not context_text:
+        #     context_text = "ZT Hosting provider. Answer briefly or ask for details."
+
+
+        # --- STEP 1: SMART FRAGMENT SCANNER (Out of the box) ---
         context_text = ""
-        matched_files = []
-        user_words = set(user_query_lower.split())
+        user_words = [word for word in user_query_lower.split() if len(word) > 2]
 
         if DATA_DIR.exists():
             all_files = [f for f in os.listdir(DATA_DIR) if f.endswith(".txt")]
-            for file in all_files:
-                file_keywords = set(file.lower().replace("_", " ").replace(".txt", "").split())
-                if user_words.intersection(file_keywords):
-                    matched_files.append(file)
-
-            for f_name in matched_files[:3]:
+            
+            # 1. Filename matching (Priority)
+            matched_files = [f for f in all_files if any(w in f.lower() for w in user_words)]
+            
+            # 2. Deep Content Search (If answer is at the end of the file)
+            for f_name in matched_files[:5]:
                 f_path = DATA_DIR / f_name
-                context_text += f_path.read_text(encoding="utf-8")[:2000] + "\n"
-
-        # --- FALLBACK AGAR FILE NA MILAY ---
-        if not context_text:
-            context_text = "ZT Hosting provider. Answer briefly or ask for details."
+                full_content = f_path.read_text(encoding="utf-8")
+                
+                # Agar file badi hai, toh keyword ke aas-paas ka text dhundo
+                if any(word in full_content.lower() for word in user_words):
+                    # Puri file ka wo hissa uthao jahan keyword hai (Start, Middle, or End)
+                    lines = full_content.splitlines()
+                    for i, line in enumerate(lines):
+                        if any(w in line.lower() for w in user_words):
+                            # Keyword wali line + uske upar niche ki 10 lines uthao
+                            start = max(0, i - 10)
+                            end = min(len(lines), i + 10)
+                            context_text += "\n".join(lines[start:end]) + "\n"
+                            break 
+                else:
+                    # Agar keyword nahi mila toh shuruat ka hi sahi
+                    context_text += full_content[:2000] + "\n"
 
         # --- STEP 2: AI PROCESSING (STRICT PROTOCOLS) ---
         llm = get_llm()
