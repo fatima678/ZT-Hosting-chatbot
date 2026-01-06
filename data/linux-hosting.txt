@@ -1,4 +1,5 @@
 Source: https://zthosting.com/linux-hosting/
+Hash: d066dd158c2f3a9b2a7265264af5836e
 ==============================
 Category:
 Linux Hosting

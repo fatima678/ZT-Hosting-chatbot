@@ -1,4 +1,5 @@
 Source: https://zthosting.com/windows-hosting/
+Hash: d89f78e7a48db4748bd0178b4f6db788
 ==============================
 Category:
 Windows Hosting

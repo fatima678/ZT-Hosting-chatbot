@@ -1,4 +1,5 @@
-Source: https://zthosting.com/managed-cloud-hosting
+Source: https://zthosting.com/managed-cloud-hosting/
+Hash: 24b3286384e1f0903050f199fbcc1f9c
 ==============================
 Where We Host Your Dreams!
 Zero Tolerance Best Web Hosting, Most Reliable and Secured

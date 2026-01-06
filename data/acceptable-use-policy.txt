@@ -1,4 +1,5 @@
 Source: https://zthosting.com/acceptable-use-policy/
+Hash: b87cb66db8260a1ebcdaa6a3ef5e3d05
 ==============================
 Acceptable Usage Policy
 Acceptable Use Policy, ZtHosting
