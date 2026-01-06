@@ -311,42 +311,40 @@
 # update the code to resolve the issue of webscraper 
 import os
 from langchain_community.vectorstores import Chroma
-# Naya import name jo error fix karega
-from langchain_community.embeddings import HuggingFaceEndpointEmbeddings
+# Is naye tariqe se import karein, ye error nahi dega
+from langchain_huggingface import HuggingFaceEmbeddings 
 from langchain_community.document_loaders import DirectoryLoader, TextLoader
 from langchain_text_splitters import CharacterTextSplitter
 
 # FREE Embeddings Setup
-# dhyaan dein yahan 'huggingfacehub_api_token' aur 'model' likha hai
-embeddings = HuggingFaceEndpointEmbeddings(
-    huggingfacehub_api_token=os.environ.get("HUGGINGFACE_TOKEN"), 
-    model="sentence-transformers/all-MiniLM-L6-v2"
+# Ye bina kisi error ke chale ga
+embeddings = HuggingFaceEmbeddings(
+    model_name="sentence-transformers/all-MiniLM-L6-v2",
+    model_kwargs={'device': 'cpu'}
 )
 
 def clean_and_sync_vector_db():
     data_dir = 'data/'
     db_dir = 'db/'
 
-    print("🔄 Loading latest data from scraper...")
-    
-    # Files load karna
+    if not os.path.exists(data_dir) or not os.listdir(data_dir):
+        print("⚠️ No data files found. Running scraper might be necessary.")
+        return
+
+    print("🔄 Loading data and updating Vector DB...")
     loader = DirectoryLoader(data_dir, glob="./*.txt", loader_cls=TextLoader)
     documents = loader.load()
 
-    # Text splitting
     text_splitter = CharacterTextSplitter(chunk_size=1000, chunk_overlap=0)
     docs = text_splitter.split_documents(documents)
 
-    print(f"📦 Processing {len(docs)} chunks...")
-
-    # ChromaDB mein data save karna
+    # Database create karna
     vectorstore = Chroma.from_documents(
         documents=docs, 
         embedding=embeddings,
         persist_directory=db_dir
     )
-    
-    print("✅ Bot Database is now updated successfully!")
+    print("✅ Database updated successfully with HuggingFace!")
 
 if __name__ == "__main__":
     if not os.path.exists('data'): os.makedirs('data')

@@ -274,8 +274,9 @@ jobs:
         run: |
           pip install requests beautifulsoup4 
           pip install langchain langchain-chroma langchain-community 
-          pip install huggingface_hub unstructured python-magic
-
+          pip install langchain-huggingface sentence-transformers
+          pip install unstructured python-magic
+          
       - name: Run Scraper
         run: python api/scraper.py
 
