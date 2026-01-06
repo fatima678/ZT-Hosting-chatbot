@@ -3439,6 +3439,8 @@ import requests
 from langchain_groq import ChatGroq
 from langchain_core.prompts import ChatPromptTemplate
 from supabase import create_client, Client
+from langchain_community.embeddings import HuggingFaceHubEmbeddings
+from langchain_chroma import Chroma
 
 # VERCEL SAFE EMBEDDINGS (No crash version)
 from langchain_community.embeddings import HuggingFaceHubEmbeddings
