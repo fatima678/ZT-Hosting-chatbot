@@ -2773,8 +2773,6 @@ import requests
 from langchain_groq import ChatGroq
 from langchain_core.prompts import ChatPromptTemplate
 from supabase import create_client, Client
-from langchain_community.embeddings import HuggingFaceHubEmbeddings
-from langchain_chroma import Chroma
 
 from .response_formatter import ResponseFormatter
 from .output_parser import FormattedOutputParser
@@ -3084,117 +3082,7 @@ async def debug_paths():
 # update the code greeting ko sahi sy handle krny ky lea 
 
 
-# DATA_DIR = BASE_DIR / "data"
-
-# @app.post("/ask")
-# async def ask_bot(request: Request):
-#     try:
-#         data = await request.json()
-#         user_input = data.get("message", "").strip()
-#         user_query_lower = user_input.lower()
-
-#         # --- GREETINGS REGEX (SAB SE UPAR) ---
-#         import re
-#         # Ye hiii, hyyy, hellooo, aoa sab ko scanner se pehle pakad lega
-#         if re.search(r'^(h+[iy]+|h+e+l+o+|a+o+a+|s+a+l+a+m+)', user_query_lower):
-#             return {"answer": "Hello! Welcome to ZT Hosting. How can I assist you with our services today?"}
-
-#         # # --- STEP 1: DYNAMIC FILE SCANNER ---
-#         # context_text = ""
-#         # matched_files = []
-#         # user_words = set(user_query_lower.split())
-
-#         # if DATA_DIR.exists():
-#         #     all_files = [f for f in os.listdir(DATA_DIR) if f.endswith(".txt")]
-#         #     for file in all_files:
-#         #         file_keywords = set(file.lower().replace("_", " ").replace(".txt", "").split())
-#         #         if user_words.intersection(file_keywords):
-#         #             matched_files.append(file)
-
-#         #     for f_name in matched_files[:3]:
-#         #         f_path = DATA_DIR / f_name
-#         #         context_text += f_path.read_text(encoding="utf-8")[:2000] + "\n"
-
-#         # # --- FALLBACK AGAR FILE NA MILAY ---
-#         # if not context_text:
-#         #     context_text = "ZT Hosting provider. Answer briefly or ask for details."
-
-
-#         # --- STEP 1: SMART FRAGMENT SCANNER (Out of the box) ---
-#         context_text = ""
-#         user_words = [word for word in user_query_lower.split() if len(word) > 2]
-
-#         if DATA_DIR.exists():
-#             all_files = [f for f in os.listdir(DATA_DIR) if f.endswith(".txt")]
-            
-#             # 1. Filename matching (Priority)
-#             matched_files = [f for f in all_files if any(w in f.lower() for w in user_words)]
-            
-#             # 2. Deep Content Search (If answer is at the end of the file)
-#             for f_name in matched_files[:5]:
-#                 f_path = DATA_DIR / f_name
-#                 full_content = f_path.read_text(encoding="utf-8")
-                
-#                 # Agar file badi hai, toh keyword ke aas-paas ka text dhundo
-#                 if any(word in full_content.lower() for word in user_words):
-#                     # Puri file ka wo hissa uthao jahan keyword hai (Start, Middle, or End)
-#                     lines = full_content.splitlines()
-#                     for i, line in enumerate(lines):
-#                         if any(w in line.lower() for w in user_words):
-#                             # Keyword wali line + uske upar niche ki 10 lines uthao
-#                             start = max(0, i - 10)
-#                             end = min(len(lines), i + 10)
-#                             context_text += "\n".join(lines[start:end]) + "\n"
-#                             break 
-#                 else:
-#                     # Agar keyword nahi mila toh shuruat ka hi sahi
-#                     context_text += full_content[:5000] + "\n"
-
-#         # --- STEP 2: AI PROCESSING (STRICT PROTOCOLS) ---
-#         llm = get_llm()
-#         # system_prompt = (
-#         #     "You are a Senior ZT Hosting Support Executive. "
-#         #     "STRICT PROTOCOLS: "
-#         #     "1. RESPONSE LIMIT: Max 60-80 words. "
-#         #     "2. STRUCTURE: Use exactly 3 bullet points for services. "
-#         #     "3. DIRECTNESS: Start answer immediately. No 'Hello'. "
-#         #     "4. VISUAL HIERARCHY: Use **bold** for prices and plans."
-#         # )
-
-#        # --- FIXED FORMATTING SYSTEM PROMPT ---
-#         system_prompt = (
-#             "You are a Senior ZT Hosting Support Executive. "
-#             "STRICT FORMATTING RULES: "
-#             "1. ALWAYS use a short introductory sentence first. "
-#             "2. ALWAYS provide the main information in EXACTLY 3 bullet points. "
-#             "3. FOR DETAILS: If the question needs more depth, you can add 1-2 short paragraphs AFTER the 3 bullet points. "
-#             "4. VISUALS: Use **bold** for all plan names, prices, and technical tools. "
-#             "5. DIRECTNESS: No 'Hello' or 'I can help'. Start directly."
-#         )
-
-#         prompt = ChatPromptTemplate.from_messages([
-#             ("system", system_prompt),
-#             ("user", f"Context: {context_text}\n\nQuestion: {user_input}")
-#         ])
-
-#         chain = prompt | llm
-#         response = chain.invoke({"input": user_input})
-        
-#         return {"answer": response.content}
-
-#     except Exception as e:
-#         return {"answer": f"I'm sorry, I'm having trouble. (Error: {str(e)})"}
-
-
-# update the code bot ky long paragaraphs ko handle krny ky lea 
-
-# --- STEP 1: VECTOR DB SETUP (Function ke bahar, top par rakhein) ---
-from langchain_chroma import Chroma
-from langchain_huggingface import HuggingFaceEmbeddings
-
-# Embeddings aur DB connect karein (Ye aapke 'db/' folder se data uthayega)
-embeddings = HuggingFaceEmbeddings(model_name="sentence-transformers/all-MiniLM-L6-v2")
-vector_db = Chroma(persist_directory="db/", embedding_function=embeddings)
+DATA_DIR = BASE_DIR / "data"
 
 @app.post("/ask")
 async def ask_bot(request: Request):
@@ -3203,26 +3091,83 @@ async def ask_bot(request: Request):
         user_input = data.get("message", "").strip()
         user_query_lower = user_input.lower()
 
-        # --- GREETINGS (Wahi purana logic) ---
+        # --- GREETINGS REGEX (SAB SE UPAR) ---
         import re
+        # Ye hiii, hyyy, hellooo, aoa sab ko scanner se pehle pakad lega
         if re.search(r'^(h+[iy]+|h+e+l+o+|a+o+a+|s+a+l+a+m+)', user_query_lower):
             return {"answer": "Hello! Welcome to ZT Hosting. How can I assist you with our services today?"}
 
-        # --- STEP 2: NAYA SEARCH LOGIC (Purani file searching ki jagah ye 2 lines) ---
-        # Ye user ke sawal ke mutabiq sab se behtareen 3 chunks dhonde ga
-        docs = vector_db.similarity_search(user_input, k=3)
-        context_text = "\n".join([doc.page_content for doc in docs])
+        # # --- STEP 1: DYNAMIC FILE SCANNER ---
+        # context_text = ""
+        # matched_files = []
+        # user_words = set(user_query_lower.split())
 
-        # --- STEP 3: MATURE SYSTEM PROMPT (Accuracy ke liye) ---
+        # if DATA_DIR.exists():
+        #     all_files = [f for f in os.listdir(DATA_DIR) if f.endswith(".txt")]
+        #     for file in all_files:
+        #         file_keywords = set(file.lower().replace("_", " ").replace(".txt", "").split())
+        #         if user_words.intersection(file_keywords):
+        #             matched_files.append(file)
+
+        #     for f_name in matched_files[:3]:
+        #         f_path = DATA_DIR / f_name
+        #         context_text += f_path.read_text(encoding="utf-8")[:2000] + "\n"
+
+        # # --- FALLBACK AGAR FILE NA MILAY ---
+        # if not context_text:
+        #     context_text = "ZT Hosting provider. Answer briefly or ask for details."
+
+
+        # --- STEP 1: SMART FRAGMENT SCANNER (Out of the box) ---
+        context_text = ""
+        user_words = [word for word in user_query_lower.split() if len(word) > 2]
+
+        if DATA_DIR.exists():
+            all_files = [f for f in os.listdir(DATA_DIR) if f.endswith(".txt")]
+            
+            # 1. Filename matching (Priority)
+            matched_files = [f for f in all_files if any(w in f.lower() for w in user_words)]
+            
+            # 2. Deep Content Search (If answer is at the end of the file)
+            for f_name in matched_files[:5]:
+                f_path = DATA_DIR / f_name
+                full_content = f_path.read_text(encoding="utf-8")
+                
+                # Agar file badi hai, toh keyword ke aas-paas ka text dhundo
+                if any(word in full_content.lower() for word in user_words):
+                    # Puri file ka wo hissa uthao jahan keyword hai (Start, Middle, or End)
+                    lines = full_content.splitlines()
+                    for i, line in enumerate(lines):
+                        if any(w in line.lower() for w in user_words):
+                            # Keyword wali line + uske upar niche ki 10 lines uthao
+                            start = max(0, i - 10)
+                            end = min(len(lines), i + 10)
+                            context_text += "\n".join(lines[start:end]) + "\n"
+                            break 
+                else:
+                    # Agar keyword nahi mila toh shuruat ka hi sahi
+                    context_text += full_content[:5000] + "\n"
+
+        # --- STEP 2: AI PROCESSING (STRICT PROTOCOLS) ---
         llm = get_llm()
+        # system_prompt = (
+        #     "You are a Senior ZT Hosting Support Executive. "
+        #     "STRICT PROTOCOLS: "
+        #     "1. RESPONSE LIMIT: Max 60-80 words. "
+        #     "2. STRUCTURE: Use exactly 3 bullet points for services. "
+        #     "3. DIRECTNESS: Start answer immediately. No 'Hello'. "
+        #     "4. VISUAL HIERARCHY: Use **bold** for prices and plans."
+        # )
+
+       # --- FIXED FORMATTING SYSTEM PROMPT ---
         system_prompt = (
             "You are a Senior ZT Hosting Support Executive. "
-            "STRICT RULES: "
-            "1. Be direct and professional. "
-            "2. Use EXACTLY 3 bullet points for features. "
-            "3. Use a Markdown Table for any price or plan comparison. "
-            "4. Keep the total response under 100-150 words. "
-            "5. If information is missing in context, say you don't know and ask to contact support."
+            "STRICT FORMATTING RULES: "
+            "1. ALWAYS use a short introductory sentence first. "
+            "2. ALWAYS provide the main information in EXACTLY 3 bullet points. "
+            "3. FOR DETAILS: If the question needs more depth, you can add 1-2 short paragraphs AFTER the 3 bullet points. "
+            "4. VISUALS: Use **bold** for all plan names, prices, and technical tools. "
+            "5. DIRECTNESS: No 'Hello' or 'I can help'. Start directly."
         )
 
         prompt = ChatPromptTemplate.from_messages([
@@ -3231,7 +3176,7 @@ async def ask_bot(request: Request):
         ])
 
         chain = prompt | llm
-        response = chain.invoke({})
+        response = chain.invoke({"input": user_input})
         
         return {"answer": response.content}
 
