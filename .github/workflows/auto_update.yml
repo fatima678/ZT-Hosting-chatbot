@@ -262,12 +262,19 @@ jobs:
         with:
           python-version: '3.9'
 
+      # - name: Dependencies Install
+      #   run: |
+      #     pip install requests beautifulsoup4 
+      #     pip install langchain langchain-chroma langchain-community 
+      #     pip install huggingface_hub
+      #     pip install unstructured  # Files read karne ke liye zaroori hai
+
+
       - name: Dependencies Install
         run: |
           pip install requests beautifulsoup4 
           pip install langchain langchain-chroma langchain-community 
-          pip install huggingface_hub
-          pip install unstructured  # Files read karne ke liye zaroori hai
+          pip install huggingface_hub unstructured python-magic
 
       - name: Run Scraper
         run: python api/scraper.py
