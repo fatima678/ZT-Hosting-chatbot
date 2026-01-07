@@ -2831,258 +2831,17 @@ async def debug_paths():
         }
     }
 
-# @app.post("/ask")
-# async def ask_bot(request: Request):
-#     try:
-#         data = await request.json()
-#         user_input = data.get("message", "").lower().strip()
-#         if not user_input:
-#             return {"answer": "Aapka sawal kya hai?"}
-
-#         # --- LOAD BOT SETTINGS ---
-#         try:
-#             settings_res = supabase.table("bot_settings").select("*").limit(1).execute()
-#             if settings_res.data and len(settings_res.data) > 0:
-#                 settings = settings_res.data[0]
-#                 response_style = settings.get("response_style", "short")
-#                 priority = settings.get("priority", "database_first")
-#                 context_size = settings.get("context_size", 4000)
-#             else:
-#                 # Defaults
-#                 response_style = "short"
-#                 priority = "database_first"
-#                 context_size = 4000
-#         except:
-#             # Defaults if table doesn't exist yet
-#             response_style = "short"
-#             priority = "database_first"
-#             context_size = 4000
-
-#         # --- STEP 1: DATABASE CHECK ---
-#         db_res = supabase.table("manual_faqs").select("question, answer").execute()
-#         db_context = ""  # Initialize db_context
-        
-#         if priority == "database_first":
-#             # Strict database priority - return immediately on match
-#             for row in db_res.data:
-#                 if row['question'].lower() in user_input:
-#                     # Apply OutputParser to database answers too
-#                     output_parser = FormattedOutputParser(style=response_style, user_input=user_input)
-#                     result = output_parser.parse(row['answer'])
-#                     return {
-#                         "answer": result["final_text"],
-#                         "metadata": {
-#                             "tokens_used": result["tokens_used"],
-#                             "truncated": result["truncated"],
-#                             "source": "database"
-#                         }
-#                     }
-#         else:
-#             # AI supplement mode - collect DB context but don't return yet
-#             for row in db_res.data:
-#                 if row['question'].lower() in user_input:
-#                     db_context = f"Database Info: {row['answer']}\n\n"
-#                     break
-
-#         # --- STEP 2: SMART FILE ROUTING ---
-#         # Default file: Agar koi specific keyword na mile toh home page ya general info use karein
-#         file_name = "zt_home_page.txt" 
-        
-#         if "reseller" in user_input:
-#             file_name = "reseller_hosting.txt"
-#         elif any(x in user_input for x in ["domain", ".pk", ".com", "register"]):
-#             file_name = "domain_registration.txt"
-#         elif "vps" in user_input:
-#             file_name = "pro_vps_hosting.txt"
-#         elif "business" in user_input:
-#             file_name = "pro_hosting_business_web.txt"
-#         elif "wordpress" in user_input:
-#             file_name = "pro_wordpress_hosting.txt"
-#         elif "email" in user_input:
-#             file_name = "pro_email_hosting.txt"
-#         elif "dedicated" in user_input:
-#             file_name = "pro_dedicated_servers.txt"
-#         elif "promo" in user_input or "offer" in user_input:
-#             file_name = "promo_packages.txt"
-#         elif "shared" in user_input or "web hosting" in user_input:
-#             file_name = "shared_webhosting.txt"
-
-#         target_path = BASE_DIR / "data" / file_name
-        
-#         # Sirf tabhi parhein agar file exist karti ho
-#         if target_path.exists():
-#             # Use dynamic context size from settings
-#             file_context = target_path.read_text(encoding="utf-8")[:context_size]
-#         else:
-#             return {"answer": "I am sorry, I don't have specific details about this service yet."}
-
-#         # --- STEP 3: AI PROCESSING ---
-#         llm = get_llm()
-        
-#         # Build system prompt based on response style
-#         if response_style == "conversational":
-#             system_prompt = (
-#                 "You are a friendly and helpful ZT Hosting Support assistant. "
-#                 "Answer in a conversational, human-like tone with warmth and empathy. "
-#                 "Feel free to use greetings and be detailed in your explanations. "
-#                 "### CRITICAL INSTRUCTION for Pricing: ### "
-#                 "1. For any plan price, FIRST look at the Markdown Tables. "
-#                 "2. If a table shows a '$1/1st month' offer, you MUST mention it with enthusiasm. "
-#                 "3. Format pricing clearly: 'Great news! You can start with just **$1 for the 1st month**, "
-#                 "and then it renews at **PKR [Price]**'. "
-#                 "4. If info like 'cPanel accounts' or 'SSD Storage' is in a table, extract it accurately. "
-#                 "5. If you cannot find the answer, politely say 'I apologize, but I don't have that specific "
-#                 "information at the moment. Let me connect you with our support team who can help you better.'"
-#             )
-#         else:
-#             # Short and professional
-#             system_prompt = (
-#                 "You are ZT Hosting Support assistant. Answer ONLY based on the provided context. "
-#                 "Keep responses concise and to-the-point. "
-#                 "### CRITICAL INSTRUCTION for Pricing: ### "
-#                 "1. For any plan price, FIRST look at the Markdown Tables. "
-#                 "2. If a table shows a '$1/1st month' offer, you MUST mention it. Do not just say the PKR price. "
-#                 "3. Format pricing clearly: 'Promo: **$1 for the 1st month**, Renewing at: **PKR [Price]**'. "
-#                 "4. If info like 'cPanel accounts' or 'SSD Storage' is in a table, extract it accurately from the correct column. "
-#                 "5. If you cannot find the answer in the provided text, say 'I am sorry, I don't have this information yet.'"
-#             )
-        
-#         # Combine contexts if in AI supplement mode and db_context exists
-#         if priority == "ai_supplement" and db_context:
-#             context_text = db_context + file_context
-#         else:
-#             context_text = file_context
-        
-#         prompt = ChatPromptTemplate.from_messages([
-#             ("system", system_prompt),
-#             ("user", f"Context: {context_text}\n\nQuestion: {user_input}")
-#         ])
-
-#         # Create OutputParser with current settings
-#         output_parser = FormattedOutputParser(style=response_style, user_input=user_input)
-        
-#         # Wire OutputParser into chain via RunnableSequence
-#         chain = prompt | llm | output_parser
-        
-#         # Invoke the chain - parser returns structured output
-#         result = chain.invoke({"input": user_input})
-        
-#         # Return the formatted text with metadata
-#         return {
-#             "answer": result["final_text"],
-#             "metadata": {
-#                 "tokens_used": result["tokens_used"],
-#                 "truncated": result["truncated"]
-#             }
-#         }
-
-#     except Exception as e:
-#         # Code 413 or 429 management
-#         if "413" in str(e) or "limit" in str(e).lower():
-#             return {"answer": "The request is too large or system is busy. Please try asking a shorter question."}
-#         return {"answer": f"System Error: {str(e)}"}
-
-# DATA_DIR = BASE_DIR / "data"
-
-# @app.post("/ask")
-# async def ask_bot(request: Request):
-#     try:
-#         data = await request.json()
-#         user_input = data.get("message", "").strip()
-#         user_query_lower = user_input.lower()
-
-#         # <--- YAHAN PASTE KAREIN --->
-#         # --- START GREETINGS LOGIC ---
-#         # --- TECHNICAL GREETING BYPASS (Yahan rakhein taake scanner se pehle check ho) ---
-#         # --- YAHAN PASTE KAREIN (Sab se upar) ---
-#         import re
-#         # Ye line hiii, hyyy, hellooo, sab ko pakad legi
-#         if re.search(r'^(h+[iy]+|h+e+l+o+|a+o+a+|s+a+l+a+m+)', user_query_lower):
-#             return {"answer": "Hello! Welcome to ZT Hosting. How can I assist you with our services today?"}
-#         # -------------------
-
-#         # --- STEP 1: DYNAMIC FILE SCANNER (100+ Files) ---
-#         context_text = ""
-#         matched_files = []
-#         user_words = set(user_query_lower.split())
-
-#         if DATA_DIR.exists():
-#             all_files = [f for f in os.listdir(DATA_DIR) if f.endswith(".txt")]
-            
-#             for file in all_files:
-#                 # File name ko keywords mein badlein (e.g. 'vps_hosting.txt' -> {'vps', 'hosting'})
-#                 file_keywords = set(file.lower().replace("_", " ").replace(".txt", "").split())
-                
-#                 # Agar koi keyword match ho jaye
-#                 if user_words.intersection(file_keywords):
-#                     matched_files.append(file)
-
-#             # Relevant files parhein (Limit 3 files to avoid memory crash)
-#             for f_name in matched_files[:3]:
-#                 f_path = DATA_DIR / f_name
-#                 context_text += f_path.read_text(encoding="utf-8")[:2000] + "\n"
-
-#         # Fallback agar koi file match na ho
-#         # if not context_text:
-#         #     home_file = DATA_DIR / "zt_home_page.txt"
-#         #     if home_file.exists():
-#         #         context_text = home_file.read_text(encoding="utf-8")[:3000]
-
-#         # update code hello or hy greeting ko sahi sy response deny ky lea
-
-#         if not context_text:
-#             # Agar koi file nahi mili, toh hum AI ko khula chhor denge
-#             # Ya phir sirf basic intro denge taake wo khud se baat kare
-#             context_text = "ZT Hosting is a professional web hosting provider. If you don't have specific data for a query, answer politely or ask for more details."
-
-#         # --- STEP 2: AI PROCESSING ---
-#         llm = get_llm()
-#         # system_prompt = (
-#         #     "You are a Senior ZT Hosting Support Executive. "
-#         #     "STRICT RULES: Use **Bold** for emphasis. Use Bullet Points for lists. "
-#         #     "Keep answers structured and professional. If you find a price offer like $1, mention it clearly."
-#         #     "Be concise and use only 3-4 bullet points for features unless the user asks for more details."
-#         # )
-        
-
-# #         system_prompt = (
-# #     "You are a Senior ZT Hosting Support Executive. "
-# #     "STRICT RULES for conciseness: "
-# #     "1. Keep the total response under 100-150 words. "
-# #     "2. Use a MAXIMUM of 3-4 bullet points per answer. "
-# #     "3. Avoid long introductions; start directly with the answer. "
-# #     "4. Highlight the most important detail (like price) in **bold**. "
-# #     "5. Do not repeat information if it's already mentioned."
-# # )
-
-# # handle hi hello greetings 
-#         system_prompt = (
-#             "You are a Senior ZT Hosting Support Executive. Your goal is to provide elite, professional, and lightning-fast support. "
-#     "STRICT PROTOCOLS: "
-#     "1. RESPONSE LIMIT: Maximum 60-80 words total. Efficiency is key. "
-#     "2. STRUCTURE: Use exactly 3 bullet points for features/services. No more, no less. "
-#     "3. DIRECTNESS: No 'Hello' or 'How can I help'. Start with the specific answer immediately. "
-#     "4. VISUAL HIERARCHY: Use **bold** for prices, plan names, or percentages (e.g., **99.9% Uptime**). "
-#     "5. TONE: Professional, executive, and helpful. Avoid fluff like 'We offer a wide range of...'. "
-# )
-#         prompt = ChatPromptTemplate.from_messages([
-#             ("system", system_prompt),
-#             ("user", f"Context: {context_text}\n\nQuestion: {user_input}")
-#         ])
-
-#         chain = prompt | llm
-#         response = chain.invoke({"input": user_input})
-        
-#         return {"answer": response.content}
-
-#     except Exception as e:
-#         return {"answer": f"I'm sorry, I'm having trouble retrieving that. (Error: {str(e)})"}
-
-
-# update the code greeting ko sahi sy handle krny ky lea 
-
-
+# --- 1. SETTINGS & PATHS ---
+# Is line se Pylance ka error khatam ho jayega
+BASE_DIR = Path(__file__).resolve().parent.parent
 DATA_DIR = BASE_DIR / "data"
+
+def get_llm():
+    return ChatGroq(
+        groq_api_key=os.environ.get("GROQ_API_KEY"), 
+        model_name="llama-3.1-8b-instant", 
+        temperature=0.1 
+    )
 
 @app.post("/ask")
 async def ask_bot(request: Request):
@@ -3091,83 +2850,38 @@ async def ask_bot(request: Request):
         user_input = data.get("message", "").strip()
         user_query_lower = user_input.lower()
 
-        # --- GREETINGS REGEX (SAB SE UPAR) ---
-        import re
-        # Ye hiii, hyyy, hellooo, aoa sab ko scanner se pehle pakad lega
-        if re.search(r'^(h+[iy]+|h+e+l+o+|a+o+a+|s+a+l+a+m+)', user_query_lower):
-            return {"answer": "Hello! Welcome to ZT Hosting. How can I assist you with our services today?"}
+        # --- 2. GREETINGS HANDLER (Requirement: Direct answer to greetings) ---
+        if re.search(r'^(h+[iy]+|h+e+l+o+|a+o+a+|s+a+l+a+m+|kia hal|how are you)', user_query_lower):
+            return {"answer": "Hello! Welcome to ZT Hosting. I am your specialized assistant. How can I help you with our web hosting or domain services today?"}
 
-        # # --- STEP 1: DYNAMIC FILE SCANNER ---
-        # context_text = ""
-        # matched_files = []
-        # user_words = set(user_query_lower.split())
+        # --- 3. IRRELEVANT FILTER (Requirement: Strictly Hosting Only) ---
+        hosting_keywords = ['host', 'domain', 'server', 'plan', 'price', 'email', 'wp', 'wordpress', 'cpanel', 'ssl', 'vps', 'shared', 'package', 'cost', 'pkr', 'buy', 'purchase', 'zt']
+        
+        # Agar sawal mein hosting ka koi zikr nahi hai
+        if not any(word in user_query_lower for word in hosting_keywords):
+            return {"answer": "I apologize, but I am designed to assist only with ZT Hosting related queries. Please ask about our hosting plans, domains, or servers."}
 
-        # if DATA_DIR.exists():
-        #     all_files = [f for f in os.listdir(DATA_DIR) if f.endswith(".txt")]
-        #     for file in all_files:
-        #         file_keywords = set(file.lower().replace("_", " ").replace(".txt", "").split())
-        #         if user_words.intersection(file_keywords):
-        #             matched_files.append(file)
-
-        #     for f_name in matched_files[:3]:
-        #         f_path = DATA_DIR / f_name
-        #         context_text += f_path.read_text(encoding="utf-8")[:2000] + "\n"
-
-        # # --- FALLBACK AGAR FILE NA MILAY ---
-        # if not context_text:
-        #     context_text = "ZT Hosting provider. Answer briefly or ask for details."
-
-
-        # --- STEP 1: SMART FRAGMENT SCANNER (Out of the box) ---
+        # --- 4. CONTEXT SEARCH ---
         context_text = ""
         user_words = [word for word in user_query_lower.split() if len(word) > 2]
 
         if DATA_DIR.exists():
             all_files = [f for f in os.listdir(DATA_DIR) if f.endswith(".txt")]
-            
-            # 1. Filename matching (Priority)
             matched_files = [f for f in all_files if any(w in f.lower() for w in user_words)]
             
-            # 2. Deep Content Search (If answer is at the end of the file)
-            for f_name in matched_files[:5]:
+            for f_name in matched_files[:3]:
                 f_path = DATA_DIR / f_name
-                full_content = f_path.read_text(encoding="utf-8")
-                
-                # Agar file badi hai, toh keyword ke aas-paas ka text dhundo
-                if any(word in full_content.lower() for word in user_words):
-                    # Puri file ka wo hissa uthao jahan keyword hai (Start, Middle, or End)
-                    lines = full_content.splitlines()
-                    for i, line in enumerate(lines):
-                        if any(w in line.lower() for w in user_words):
-                            # Keyword wali line + uske upar niche ki 10 lines uthao
-                            start = max(0, i - 10)
-                            end = min(len(lines), i + 10)
-                            context_text += "\n".join(lines[start:end]) + "\n"
-                            break 
-                else:
-                    # Agar keyword nahi mila toh shuruat ka hi sahi
-                    context_text += full_content[:5000] + "\n"
+                content = f_path.read_text(encoding="utf-8")
+                context_text += content[:2000] + "\n"
 
-        # --- STEP 2: AI PROCESSING (STRICT PROTOCOLS) ---
+        # --- 5. SYSTEM PROMPT (Strict Format) ---
         llm = get_llm()
-        # system_prompt = (
-        #     "You are a Senior ZT Hosting Support Executive. "
-        #     "STRICT PROTOCOLS: "
-        #     "1. RESPONSE LIMIT: Max 60-80 words. "
-        #     "2. STRUCTURE: Use exactly 3 bullet points for services. "
-        #     "3. DIRECTNESS: Start answer immediately. No 'Hello'. "
-        #     "4. VISUAL HIERARCHY: Use **bold** for prices and plans."
-        # )
-
-       # --- FIXED FORMATTING SYSTEM PROMPT ---
         system_prompt = (
-            "You are a Senior ZT Hosting Support Executive. "
-            "STRICT FORMATTING RULES: "
-            "1. ALWAYS use a short introductory sentence first. "
-            "2. ALWAYS provide the main information in EXACTLY 3 bullet points. "
-            "3. FOR DETAILS: If the question needs more depth, you can add 1-2 short paragraphs AFTER the 3 bullet points. "
-            "4. VISUALS: Use **bold** for all plan names, prices, and technical tools. "
-            "5. DIRECTNESS: No 'Hello' or 'I can help'. Start directly."
+            "You are a Senior ZT Hosting Executive. "
+            "1. ONLY answer hosting questions using the context. "
+            "2. If the user asks something irrelevant, strictly refuse. "
+            "3. Format: Short intro, EXACTLY 3 bullet points for info, then a small depth paragraph. "
+            "4. Use **bold** for prices and plan names."
         )
 
         prompt = ChatPromptTemplate.from_messages([
@@ -3182,6 +2896,7 @@ async def ask_bot(request: Request):
 
     except Exception as e:
         return {"answer": f"I'm sorry, I'm having trouble. (Error: {str(e)})"}
+
 
 # --- Routes for UI (Baqi routes same rahenge) ---
 @app.get("/", response_class=HTMLResponse)
