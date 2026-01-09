@@ -3175,14 +3175,25 @@ async def ask_bot(request: Request):
 
         # 4. SYSTEM PROMPT (Sir's Strict Format)
         llm = get_llm()
+        # system_prompt = (
+        #     "You are a Senior ZT Hosting Executive. "
+        #     "STRICT RULES: "
+        #     "1. ONLY answer questions about ZT Hosting using the context. "
+        #     "2. FORMAT: Start with a short intro, use EXACTLY 3 bullet points, then a short closing paragraph. "
+        #     "3. BOLDING: Use **bold** for all plan names, technical tools, and prices. "
+        #     "4. If irrelevant, politely refuse as per training."
+        # )
+
+        # --- UPDATED STRICT SYSTEM PROMPT ---
         system_prompt = (
-            "You are a Senior ZT Hosting Executive. "
-            "STRICT RULES: "
-            "1. ONLY answer questions about ZT Hosting using the context. "
-            "2. FORMAT: Start with a short intro, use EXACTLY 3 bullet points, then a short closing paragraph. "
-            "3. BOLDING: Use **bold** for all plan names, technical tools, and prices. "
-            "4. If irrelevant, politely refuse as per training."
-        )
+    "You are a Senior ZT Hosting Executive. "
+    "STRICT RULES: "
+    "1. ONLY use the provided context to answer. Do NOT use your own knowledge or external data. "
+    "2. If the answer is NOT in the context (like specific prices or London address), say: 'I apologize, but I don't have that specific information in my records. Please contact our support at info@zthosting.com.' "
+    "3. OFFICE LOCATION: If asked about the office, the ONLY correct address is: 'Office# 202, 2nd Floor Chenab Center Blue Area Islamabad, 44000 Pakistan'. "
+    "4. FORMAT: Always start with a short intro, use EXACTLY 3 bullet points for details, and end with a short closing paragraph. "
+    "5. Use **bold** for technical terms, plan names, and locations."
+)
 
         prompt = ChatPromptTemplate.from_messages([
             ("system", system_prompt),
