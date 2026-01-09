@@ -3141,6 +3141,77 @@ def check_auth(request: Request):
     return request.cookies.get("admin_session") == "active"
 
 # --- Main Chat Bot Logic ---
+# @app.post("/ask")
+# async def ask_bot(request: Request):
+#     try:
+#         data = await request.json()
+#         user_input = data.get("message", "").strip()
+#         user_query_lower = user_input.lower()
+
+#         # 1. GREETINGS HANDLER (Requirement: Direct answer to greetings)
+#         # Handle greetings immediately to avoid irrelevant processing
+#         if re.search(r'^(h+[iy]+|h+e+l+o+|a+o+a+|s+a+l+a+m+|kia hal|how are you)', user_query_lower):
+#             return {"answer": "Hello! Welcome to ZT Hosting. I am your specialized assistant. How can I help you with our web hosting or domain services today?"}
+
+#         # 2. IRRELEVANT FILTER (Requirement: Strictly Hosting Only)
+#         # Sir's requirement: Bot should refuse non-hosting questions
+#         hosting_keywords = ['host', 'domain', 'server', 'plan', 'price', 'email', 'wp', 'wordpress', 'cpanel', 'ssl', 'vps', 'shared', 'package', 'cost', 'pkr', 'buy', 'purchase', 'zt']
+        
+#         if not any(word in user_query_lower for word in hosting_keywords):
+#             return {"answer": "I apologize, but I am designed to assist only with ZT Hosting related queries. Please ask about our hosting plans, domains, or servers."}
+
+#         # 3. CONTEXT SEARCH
+#         context_text = ""
+#         user_words = [word for word in user_query_lower.split() if len(word) > 2]
+
+#         if DATA_DIR.exists():
+#             all_files = [f for f in os.listdir(DATA_DIR) if f.endswith(".txt")]
+#             matched_files = [f for f in all_files if any(w in f.lower() for w in user_words)]
+            
+#             for f_name in matched_files[:3]:
+#                 f_path = DATA_DIR / f_name
+#                 content = f_path.read_text(encoding="utf-8")
+#                 context_text += content[:2000] + "\n"
+
+#         # 4. SYSTEM PROMPT (Sir's Strict Format)
+#         llm = get_llm()
+#         # system_prompt = (
+#         #     "You are a Senior ZT Hosting Executive. "
+#         #     "STRICT RULES: "
+#         #     "1. ONLY answer questions about ZT Hosting using the context. "
+#         #     "2. FORMAT: Start with a short intro, use EXACTLY 3 bullet points, then a short closing paragraph. "
+#         #     "3. BOLDING: Use **bold** for all plan names, technical tools, and prices. "
+#         #     "4. If irrelevant, politely refuse as per training."
+#         # )
+
+#         # --- UPDATED STRICT SYSTEM PROMPT ---
+#         system_prompt = (
+#     "You are a Senior ZT Hosting Executive. "
+#     "STRICT RULES: "
+#     "1. ONLY use the provided context to answer. Do NOT use your own knowledge or external data. "
+#     "2. If the answer is NOT in the context (like specific prices or London address), say: 'I apologize, but I don't have that specific information in my records. Please contact our support at info@zthosting.com.' "
+#     "3. OFFICE LOCATION: If asked about the office, the ONLY correct address is: 'Office# 202, 2nd Floor Chenab Center Blue Area Islamabad, 44000 Pakistan'. "
+#     "4. FORMAT: Always start with a short intro, use EXACTLY 3 bullet points for details, and end with a short closing paragraph. "
+#     "5. Use **bold** for technical terms, plan names, and locations."
+# )
+
+#         prompt = ChatPromptTemplate.from_messages([
+#             ("system", system_prompt),
+#             ("user", f"Context: {context_text}\n\nQuestion: {user_input}")
+#         ])
+
+#         chain = prompt | llm
+#         response = chain.invoke({"input": user_input})
+        
+#         return {"answer": response.content}
+
+#     except Exception as e:
+#         return {"answer": f"I'm sorry, I'm having trouble. (Error: {str(e)})"}
+
+
+
+
+
 @app.post("/ask")
 async def ask_bot(request: Request):
     try:
@@ -3148,53 +3219,36 @@ async def ask_bot(request: Request):
         user_input = data.get("message", "").strip()
         user_query_lower = user_input.lower()
 
-        # 1. GREETINGS HANDLER (Requirement: Direct answer to greetings)
-        # Handle greetings immediately to avoid irrelevant processing
+        # 1. GREETINGS HANDLER (Direct Response)
         if re.search(r'^(h+[iy]+|h+e+l+o+|a+o+a+|s+a+l+a+m+|kia hal|how are you)', user_query_lower):
-            return {"answer": "Hello! Welcome to ZT Hosting. I am your specialized assistant. How can I help you with our web hosting or domain services today?"}
+            return {"answer": "Hello! Welcome to ZT Hosting. I am your specialized assistant. How can I assist you with our services today?"}
 
-        # 2. IRRELEVANT FILTER (Requirement: Strictly Hosting Only)
-        # Sir's requirement: Bot should refuse non-hosting questions
-        hosting_keywords = ['host', 'domain', 'server', 'plan', 'price', 'email', 'wp', 'wordpress', 'cpanel', 'ssl', 'vps', 'shared', 'package', 'cost', 'pkr', 'buy', 'purchase', 'zt']
-        
-        if not any(word in user_query_lower for word in hosting_keywords):
-            return {"answer": "I apologize, but I am designed to assist only with ZT Hosting related queries. Please ask about our hosting plans, domains, or servers."}
-
-        # 3. CONTEXT SEARCH
+        # 2. CONTEXT SEARCH (Wahi purana search logic)
         context_text = ""
         user_words = [word for word in user_query_lower.split() if len(word) > 2]
-
         if DATA_DIR.exists():
             all_files = [f for f in os.listdir(DATA_DIR) if f.endswith(".txt")]
             matched_files = [f for f in all_files if any(w in f.lower() for w in user_words)]
-            
             for f_name in matched_files[:3]:
                 f_path = DATA_DIR / f_name
-                content = f_path.read_text(encoding="utf-8")
-                context_text += content[:2000] + "\n"
+                context_text += f_path.read_text(encoding="utf-8")[:2000] + "\n"
 
-        # 4. SYSTEM PROMPT (Sir's Strict Format)
+        # 3. LOGICAL SYSTEM PROMPT (Ab AI khud decide karega relevant hai ya nahi)
         llm = get_llm()
-        # system_prompt = (
-        #     "You are a Senior ZT Hosting Executive. "
-        #     "STRICT RULES: "
-        #     "1. ONLY answer questions about ZT Hosting using the context. "
-        #     "2. FORMAT: Start with a short intro, use EXACTLY 3 bullet points, then a short closing paragraph. "
-        #     "3. BOLDING: Use **bold** for all plan names, technical tools, and prices. "
-        #     "4. If irrelevant, politely refuse as per training."
-        # )
-
-        # --- UPDATED STRICT SYSTEM PROMPT ---
         system_prompt = (
-    "You are a Senior ZT Hosting Executive. "
-    "STRICT RULES: "
-    "1. ONLY use the provided context to answer. Do NOT use your own knowledge or external data. "
-    "2. If the answer is NOT in the context (like specific prices or London address), say: 'I apologize, but I don't have that specific information in my records. Please contact our support at info@zthosting.com.' "
-    "3. OFFICE LOCATION: If asked about the office, the ONLY correct address is: 'Office# 202, 2nd Floor Chenab Center Blue Area Islamabad, 44000 Pakistan'. "
-    "4. FORMAT: Always start with a short intro, use EXACTLY 3 bullet points for details, and end with a short closing paragraph. "
-    "5. Use **bold** for technical terms, plan names, and locations."
-)
+            "You are a Senior ZT Hosting Executive. "
+            "STRICT OPERATING RULES: "
+            "1. RELEVANCY CHECK: Your primary task is to only discuss ZT Hosting. If a user asks about general knowledge, "
+            "politics, weather, or anything unrelated to ZT Hosting's services/office/policies, "
+            "politely refuse by saying you are only specialized in ZT Hosting queries. "
+            "2. DATA SOURCE: Use the provided context ONLY. Do not use external knowledge. "
+            "3. OFFICE LOCATION: If asked, the address is: Office# 202, 2nd Floor Chenab Center Blue Area Islamabad, 44000 Pakistan. "
+            "4. MISSING INFO: If information (like specific prices) is not in the context, do not make it up. "
+            "Ask them to contact info@zthosting.com. "
+            "5. FORMAT: Short intro, EXACTLY 3 bullet points, and a short closing paragraph."
+        )
 
+        # AI Decision Making Process
         prompt = ChatPromptTemplate.from_messages([
             ("system", system_prompt),
             ("user", f"Context: {context_text}\n\nQuestion: {user_input}")
