@@ -3098,6 +3098,7 @@ import requests
 from langchain_groq import ChatGroq
 from langchain_core.prompts import ChatPromptTemplate
 from supabase import create_client, Client
+from api.response_formatter import ResponseFormatter
 
 # --- Setup ---
 app = FastAPI()
@@ -3212,18 +3213,87 @@ def check_auth(request: Request):
 
 
 
+# @app.post("/ask")
+# async def ask_bot(request: Request):
+#     try:
+#         data = await request.json()
+#         user_input = data.get("message", "").strip()
+#         user_query_lower = user_input.lower()
+
+#         # 1. GREETINGS HANDLER (Direct Response)
+#         if re.search(r'^(h+[iy]+|h+e+l+o+|a+o+a+|s+a+l+a+m+|kia hal|how are you)', user_query_lower):
+#             return {"answer": "Hello! Welcome to ZT Hosting. I am your specialized assistant. How can I assist you with our services today?"}
+
+#         # 2. CONTEXT SEARCH (Wahi purana search logic)
+#         context_text = ""
+#         user_words = [word for word in user_query_lower.split() if len(word) > 2]
+#         if DATA_DIR.exists():
+#             all_files = [f for f in os.listdir(DATA_DIR) if f.endswith(".txt")]
+#             matched_files = [f for f in all_files if any(w in f.lower() for w in user_words)]
+#             for f_name in matched_files[:3]:
+#                 f_path = DATA_DIR / f_name
+#                 context_text += f_path.read_text(encoding="utf-8")[:2000] + "\n"
+
+#         # 3. LOGICAL SYSTEM PROMPT (Ab AI khud decide karega relevant hai ya nahi)
+#         llm = get_llm()
+#         system_prompt = (
+#             "You are a Senior ZT Hosting Executive. "
+#             "STRICT OPERATING RULES: "
+#             "1. RELEVANCY CHECK: Your primary task is to only discuss ZT Hosting. If a user asks about general knowledge, "
+#             "politics, weather, or anything unrelated to ZT Hosting's services/office/policies, "
+#             "politely refuse by saying you are only specialized in ZT Hosting queries. "
+#             "2. DATA SOURCE: Use the provided context ONLY. Do not use external knowledge. "
+#             "3. OFFICE LOCATION: If asked, the address is: Office# 202, 2nd Floor Chenab Center Blue Area Islamabad, 44000 Pakistan. "
+#             "4. MISSING INFO: If information (like specific prices) is not in the context, do not make it up. "
+#             "Ask them to contact info@zthosting.com. "
+#             "5. FORMAT: Short intro, EXACTLY 3 bullet points, and a short closing paragraph."
+#         )
+
+#         # AI Decision Making Process
+#         prompt = ChatPromptTemplate.from_messages([
+#             ("system", system_prompt),
+#             ("user", f"Context: {context_text}\n\nQuestion: {user_input}")
+#         ])
+
+#         chain = prompt | llm
+#         response = chain.invoke({"input": user_input})
+        
+#         return {"answer": response.content}
+
+#     except Exception as e:
+#         return {"answer": f"I'm sorry, I'm having trouble. (Error: {str(e)})"}
+
+
+
+# update the code for better and structured response of chatbot
+
+
 @app.post("/ask")
 async def ask_bot(request: Request):
     try:
+        # 0. Import Formatter (Make sure it's imported at the top of app.py)
+        from api.response_formatter import ResponseFormatter
+        
         data = await request.json()
         user_input = data.get("message", "").strip()
         user_query_lower = user_input.lower()
 
-        # 1. GREETINGS HANDLER (Direct Response)
-        if re.search(r'^(h+[iy]+|h+e+l+o+|a+o+a+|s+a+l+a+m+|kia hal|how are you)', user_query_lower):
-            return {"answer": "Hello! Welcome to ZT Hosting. I am your specialized assistant. How can I assist you with our services today?"}
+        # --- SETTINGS FETCH (Formatter ke liye style aur context size uthana) ---
+        try:
+            settings_res = supabase.table("bot_settings").select("*").limit(1).execute()
+            settings = settings_res.data[0] if settings_res.data else {"response_style": "short", "context_size": 4000}
+        except:
+            settings = {"response_style": "short", "context_size": 4000}
+        
+        formatter = ResponseFormatter(style=settings.get("response_style", "short"))
+        context_limit = settings.get("context_size", 4000)
 
-        # 2. CONTEXT SEARCH (Wahi purana search logic)
+        # 1. GREETINGS HANDLER
+        if re.search(r'^(h+[iy]+|h+e+l+o+|a+o+a+|s+a+l+a+m+|kia hal|how are you)', user_query_lower):
+            greeting = "Hello! Welcome to ZT Hosting. I am your specialized assistant. How can I assist you with our services today?"
+            return {"answer": formatter.format(greeting, user_input=user_input)}
+
+        # 2. CONTEXT SEARCH (Wahi purana logic, bs context size dynamic hai)
         context_text = ""
         user_words = [word for word in user_query_lower.split() if len(word) > 2]
         if DATA_DIR.exists():
@@ -3231,24 +3301,19 @@ async def ask_bot(request: Request):
             matched_files = [f for f in all_files if any(w in f.lower() for w in user_words)]
             for f_name in matched_files[:3]:
                 f_path = DATA_DIR / f_name
-                context_text += f_path.read_text(encoding="utf-8")[:2000] + "\n"
+                context_text += f_path.read_text(encoding="utf-8")[:context_limit] + "\n"
 
-        # 3. LOGICAL SYSTEM PROMPT (Ab AI khud decide karega relevant hai ya nahi)
+        # 3. LOGICAL SYSTEM PROMPT
         llm = get_llm()
         system_prompt = (
-            "You are a Senior ZT Hosting Executive. "
+            "You are a specialized ZT Hosting Support Assistant. "
             "STRICT OPERATING RULES: "
-            "1. RELEVANCY CHECK: Your primary task is to only discuss ZT Hosting. If a user asks about general knowledge, "
-            "politics, weather, or anything unrelated to ZT Hosting's services/office/policies, "
-            "politely refuse by saying you are only specialized in ZT Hosting queries. "
-            "2. DATA SOURCE: Use the provided context ONLY. Do not use external knowledge. "
-            "3. OFFICE LOCATION: If asked, the address is: Office# 202, 2nd Floor Chenab Center Blue Area Islamabad, 44000 Pakistan. "
-            "4. MISSING INFO: If information (like specific prices) is not in the context, do not make it up. "
-            "Ask them to contact info@zthosting.com. "
-            "5. FORMAT: Short intro, EXACTLY 3 bullet points, and a short closing paragraph."
+            "1. RELEVANCY CHECK: Only discuss ZT Hosting services. If unrelated, politely refuse. "
+            "2. DATA SOURCE: Use the provided context ONLY to answer questions about services, prices, and office details. "
+            "3. MISSING INFO: If information is not in the context, do not make it up. Ask them to contact info@zthosting.com. "
+            "4. FORMAT: Direct and concise response."
         )
 
-        # AI Decision Making Process
         prompt = ChatPromptTemplate.from_messages([
             ("system", system_prompt),
             ("user", f"Context: {context_text}\n\nQuestion: {user_input}")
@@ -3257,10 +3322,18 @@ async def ask_bot(request: Request):
         chain = prompt | llm
         response = chain.invoke({"input": user_input})
         
-        return {"answer": response.content}
+        # --- NEW REQUIREMENT: APPLY FORMATTING ---
+        # AI ke response ko formatter se guzaar kar clean aur limit karein
+        raw_content = response.content
+        final_answer = formatter.format(raw_content, user_input=user_input)
+        
+        return {"answer": final_answer}
 
     except Exception as e:
         return {"answer": f"I'm sorry, I'm having trouble. (Error: {str(e)})"}
+    
+
+    
 
 # --- Standard UI Routes ---
 @app.get("/", response_class=HTMLResponse)
