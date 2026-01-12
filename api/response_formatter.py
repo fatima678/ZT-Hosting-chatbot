@@ -200,23 +200,47 @@ class ResponseFormatter:
         
         return " ".join(sentences)
     
+    # def _limit_sentences(self, text: str) -> str:
+    #     """
+    #     Limit number of sentences based on style.
+        
+    #     - Short: max 2 sentences
+    #     - Conversational: max 3 sentences
+    #     """
+    #     max_sentences = 2 if self.style == "short" else 3
+        
+    #     sentences = self._split_sentences(text)
+        
+    #     if len(sentences) <= max_sentences:
+    #         return text
+        
+    #     # Keep only first N sentences
+    #     limited = sentences[:max_sentences]
+    #     return " ".join(limited)
+
+
+
+    # update code at 12 january 2026 for user satisfaction
+
+
     def _limit_sentences(self, text: str) -> str:
         """
-        Limit number of sentences based on style.
-        
-        - Short: max 2 sentences
-        - Conversational: max 3 sentences
+        User satisfaction ke liye sentence limit ko thora barhate hain.
         """
-        max_sentences = 2 if self.style == "short" else 3
+        # Short mode: 2 ki bajaye 3-4 sentences (Tafseel + Clarity)
+        # Conversational: 5 sentences tak (Mukammal jawab)
+        max_sentences = 4 if self.style == "short" else 6
         
         sentences = self._split_sentences(text)
         
         if len(sentences) <= max_sentences:
             return text
         
-        # Keep only first N sentences
         limited = sentences[:max_sentences]
         return " ".join(limited)
+
+
+
     
     def _split_sentences(self, text: str) -> list:
         """
