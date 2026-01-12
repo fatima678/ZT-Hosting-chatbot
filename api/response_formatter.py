@@ -225,10 +225,10 @@ class ResponseFormatter:
 
     def _limit_sentences(self, text: str) -> str:
         """
-        User satisfaction ke liye sentence limit ko thora barhate hain.
+        Sentence limit ko optimize kiya hai taake user satisfy ho sakay.
         """
-        # Short mode: 2 ki bajaye 3-4 sentences (Tafseel + Clarity)
-        # Conversational: 5 sentences tak (Mukammal jawab)
+        # Short mode: 4 sentences tak (is mein points bhi cover ho jaty hain)
+        # Conversational: 6 sentences tak
         max_sentences = 4 if self.style == "short" else 6
         
         sentences = self._split_sentences(text)
@@ -238,7 +238,6 @@ class ResponseFormatter:
         
         limited = sentences[:max_sentences]
         return " ".join(limited)
-
 
 
     

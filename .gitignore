@@ -14,4 +14,3 @@ build/
 htmlcov/
 .DS_Store
 .env
-db/chroma.sqlite3
