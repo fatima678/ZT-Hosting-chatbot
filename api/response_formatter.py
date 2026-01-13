@@ -223,13 +223,40 @@ class ResponseFormatter:
     # update code at 12 january 2026 for user satisfaction
 
 
+    # def _limit_sentences(self, text: str) -> str:
+    #     """
+    #     Sentence limit ko optimize kiya hai taake user satisfy ho sakay.
+    #     """
+    #     # Short mode: 4 sentences tak (is mein points bhi cover ho jaty hain)
+    #     # Conversational: 6 sentences tak
+    #     max_sentences = 4 if self.style == "short" else 6
+        
+    #     sentences = self._split_sentences(text)
+        
+    #     if len(sentences) <= max_sentences:
+    #         return text
+        
+    #     limited = sentences[:max_sentences]
+    #     return " ".join(limited)
+
+
+
+    # update the code at 13 january
+
+
     def _limit_sentences(self, text: str) -> str:
         """
-        Sentence limit ko optimize kiya hai taake user satisfy ho sakay.
+        Modified: Agar list ya bullet points hain to truncate nahi karega, 
+        warna short mode mein limit apply karega.
         """
-        # Short mode: 4 sentences tak (is mein points bhi cover ho jaty hain)
-        # Conversational: 6 sentences tak
-        max_sentences = 4 if self.style == "short" else 6
+        # 1. Check karein agar text mein bullet points ya numbers hain
+        # Taake packages aur policy ki list puri nazar aaye
+        if "*" in text or "-" in text or re.search(r'\d+\.', text):
+            return text
+
+        # 2. Agar sirf plain text hai, to limit apply karein
+        # Humne limit thori badha di hai (4 ki bajaye 5-6) taake info miss na ho
+        max_sentences = 5 if self.style == "short" else 8
         
         sentences = self._split_sentences(text)
         
@@ -249,7 +276,7 @@ class ResponseFormatter:
             List of sentences (stripped)
         """
         # Basic sentence splitting on . ! ?
-        # Keep periods in numbers and abbreviations
+      
         text = re.sub(r'([.!?])\s+', r'\1|SENT_BREAK|', text)
         sentences = text.split('|SENT_BREAK|')
         
@@ -271,11 +298,14 @@ class ResponseFormatter:
             text = text.replace(url, placeholder)
         
         # Remove multiple spaces
-        text = re.sub(r'\s+', ' ', text)
+        # text = re.sub(r'\s+', ' ', text)
+
+        text = re.sub(r'[ \t]+', ' ', text)
         
         # Fix spacing around punctuation (but not for protected URLs)
-        text = re.sub(r'\s+([.,!?])', r'\1', text)
+        # text = re.sub(r'\s+([.,!?])', r'\1', text)
         
+        text = re.sub(r'\s+([.,!?])', r'\1', text)
         # Ensure single space after punctuation
         text = re.sub(r'([.,!?])([A-Za-z])', r'\1 \2', text)
         

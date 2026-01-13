@@ -3399,7 +3399,7 @@ async def ask_bot(request: Request):
 
 
             
-            docs = vector_db.similarity_search(user_input, k=3)
+            docs = vector_db.similarity_search(user_input, k=5)
             context_text = "\n".join([doc.page_content for doc in docs])
         except Exception as e:
             # Fallback Logic: Agar ChromaDB fail ho to purani file logic chale
