@@ -3101,7 +3101,7 @@ from supabase import create_client, Client
 from api.response_formatter import ResponseFormatter
 from langchain_community.vectorstores import Chroma
 # Top imports mein ye add karein
-from langchain_huggingface import HuggingFaceEmbeddings
+# from langchain_huggingface import HuggingFaceEmbeddings
 from langchain_community.embeddings import HuggingFaceInferenceAPIEmbeddings
 
 
@@ -3117,7 +3117,7 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-embeddings = HuggingFaceEmbeddings(model_name="all-MiniLM-L6-v2")   
+# embeddings = HuggingFaceEmbeddings(model_name="all-MiniLM-L6-v2")   
 
 
 # 2. Render se token uthayein
